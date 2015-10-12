@@ -9,11 +9,11 @@ var rooms = new Rooms();
 
 var constants = {
   LOOPBACK_CLIENT_ID: 'LOOPBACK_CLIENT_ID',
-  TURN_BASE_URL: 'https://computeengineondemand.appspot.com',
+  TURN_BASE_URL: 'https://apprtc.ixuan.org:3000',
   TURN_URL_TEMPLATE: '%s/turn?username=%s&key=%s',
   CEOD_KEY: '4080218913',
   WSS_HOST_ACTIVE_HOST_KEY: 'wss_host_active_host', //memcache key for the active collider host.
-  WSS_HOST_PORT_PAIRS: ['apprtc-ws.webrtc.org:443', 'apprtc-ws-2.webrtc.org:443'],
+  WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
   RESPONSE_ERROR: 'ERROR',
   RESPONSE_UNKNOWN_ROOM: 'UNKNOWN_ROOM',
   RESPONSE_UNKNOWN_CLIENT: 'UNKNOWN_CLIENT',
@@ -289,7 +289,7 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
   };
 
   var protocol = req.headers['x-forwarded-proto'];
-  if (!protocol) protocol = "http";
+  if (!protocol) protocol = "https";
   if (roomId) {
     params['room_id'] = roomId;
     params['room_link'] =  protocol + "://" + req.headers.host + '/r/' + roomId + '?' + querystring.stringify(req.query);
@@ -462,10 +462,12 @@ router.post('/leave/:roomId/:clientId', function(req, res, next) {
   rooms.get(key, function(error, room) {
     if (!room) {
       console.warn('Unknown room: ' + roomId);
-      callback({error: constants.RESPONSE_UNKNOWN_ROOM}, false);
+      res.send({ result: constants.RESPONSE_UNKNOWN_ROOM });
+      //callback({error: constants.RESPONSE_UNKNOWN_ROOM}, false);
     } else if (!room.hasClient(clientId)) {
       console.warn('Unknown client: ' + clientId);
-      callback({error: constants.RESPONSE_UNKNOWN_CLIENT}, false);
+      res.send({ result: constants.RESPONSE_UNKNOWN_CLIENT });
+      //callback({error: constants.RESPONSE_UNKNOWN_CLIENT}, false);
     } else {
       room.removeClient(clientId, function(error, isRemoved, otherClient) {
         if (error) {
@@ -484,7 +486,7 @@ router.post('/leave/:roomId/:clientId', function(req, res, next) {
       });
     }
   });
-  res.send({ result: constants.RESPONSE_SUCCESS });
+  //res.send({ result: constants.RESPONSE_SUCCESS });
 });
 
 module.exports = router;
