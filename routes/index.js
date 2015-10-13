@@ -150,17 +150,24 @@ function getWSSParameters(req) {
         //}
     }
 
+    var match = wssHostPortPair.match(/^([\.\w]+)(?:\:(\d+))?/);
+    if (!match) {
+        console.error("Check your WSS_HOST_PORT_PAIRS!");
+        process.exit();
+    }
     if (wssTLS && wssTLS == 'false') {
         return {
             wssUrl: 'ws://' + wssHostPortPair + '/ws',
             wssPostUrl: 'http://' + wssHostPortPair,
-            host: wssHostPortPair
+            host: match[1],
+            port: match[2] || 443
         }
     } else {
         return {
             wssUrl: 'wss://' + wssHostPortPair + '/ws',
             wssPostUrl: 'https://' + wssHostPortPair,
-            host: wssHostPortPair
+            host: match[1],
+            port: match[2] || 443
         }
     }
 }
@@ -420,8 +427,8 @@ router.post('/message/:roomId/:clientId', function (req, res, next) {
             console.log('Forwarding message to collider from room ' + roomId + ' client ' + clientId);
             var wssParams = getWSSParameters(req);
             var postOptions = {
-                host: 'apprtc-ws.webrtc.org',//wssParams.host,
-                port: 443,
+                host: wssParams.host,//wssParams.host,
+                port: wssParams.port,
                 path: '/' + roomId + '/' + clientId,
                 method: 'POST'
             };
