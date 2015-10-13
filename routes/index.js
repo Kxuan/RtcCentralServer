@@ -2,6 +2,7 @@ var util = require('util');
 var querystring = require('querystring');
 var https = require('https');
 var http = require('http');
+var crypto = require('crypto');
 var express = require('express');
 var router = express.Router();
 var Rooms = require('../lib/rooms.js');
@@ -11,6 +12,7 @@ var constants = {
     LOOPBACK_CLIENT_ID: 'LOOPBACK_CLIENT_ID',
     TURN_BASE_URL: 'https://apprtc.ixuan.org:3000',
     TURN_URL_TEMPLATE: '%s/turn?username=%s&key=%s',
+    TURN_SERVER: 'apprtc.ixuan.org:3478',
     CEOD_KEY: '4080218913',
     WSS_HOST_ACTIVE_HOST_KEY: 'wss_host_active_host', //memcache key for the active collider host.
     WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
@@ -383,6 +385,37 @@ router.get('/', function (req, res, next) {
     res.render("index_template", params);
 });
 
+router.get('/turn', function (req, res, next) {
+    var query = req.query;
+    if (query.key !== constants.CEOD_KEY) {
+        return res.send({'error': 'AppError', 'message': 'Key mismatch'});
+    }
+    res.header("Access-Control-Allow-Origin", "*");
+
+    if (!query['username']) {
+        return res.send({'error': 'AppError', 'message': 'Must provide username.'});
+    } else {
+        var time_to_live = 600;
+        var timestamp = Math.floor(Date.now() / 1000) + time_to_live;
+        var turn_username = timestamp + ':' + query['username'];
+        var sha1 = crypto.createHmac('sha1', constants.CEOD_KEY);
+        sha1.setEncoding('base64');
+        sha1.end(turn_username);
+        var password = sha1.read();
+        res.json({
+            username: turn_username,
+            password: password,
+            ttl: time_to_live,
+            "uris": [
+                "turn:" + constants.TURN_SERVER + "?transport=udp",
+                "turn:" + constants.TURN_SERVER + "?transport=tcp",
+                "turn:" + constants.TURN_SERVER + "?transport=udp",
+                "turn:" + constants.TURN_SERVER + "?transport=tcp"
+            ]
+        });
+    }
+
+});
 router.post('/join/:roomId', function (req, res, next) {
     var roomId = req.params.roomId;
     var clientId = getClientId(req, res);
@@ -495,11 +528,11 @@ router.post('/leave/:roomId/:clientId', function (req, res, next) {
                     if (otherClient) {
                         otherClient.isInitiator = true;
                     }
+                    res.send({result: constants.RESPONSE_SUCCESS});
                 }
             });
         }
     });
-    //res.send({ result: constants.RESPONSE_SUCCESS });
 });
 
 module.exports = router;

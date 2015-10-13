@@ -20,21 +20,22 @@ app.set('port', port);
  * Create HTTP server.
  */
 
-var server = https.createServer({
-    key: fs.readFileSync('/data/certs/apprtc.key'),
-    cert: fs.readFileSync('/data/certs/apprtc.crt'),
+var server = module.exports = exports =
+    https.createServer({
+        key: fs.readFileSync('/data/certs/apprtc.key'),
+        cert: fs.readFileSync('/data/certs/apprtc.crt'),
 
-    // This is necessary only if using the client certificate authentication.
-    requestCert: false,
+        // This is necessary only if using the client certificate authentication.
+        requestCert: false,
 
-    // This is necessary only if the client uses the self-signed certificate.
-    ca: [
-        fs.readFileSync('/data/certs/CA/cacert.pem')
-    ],
-    handshakeTimeout: 10000,
-    rejectUnauthorized: false
+        // This is necessary only if the client uses the self-signed certificate.
+        ca: [
+            fs.readFileSync('/data/certs/CA/cacert.pem')
+        ],
+        handshakeTimeout: 10000,
+        rejectUnauthorized: false
 
-}, app);
+    }, app);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -43,6 +44,7 @@ var server = https.createServer({
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+
 
 /**
  * Normalize a port into a number, string, or false.
