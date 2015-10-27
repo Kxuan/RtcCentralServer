@@ -9,20 +9,21 @@ var Rooms = require('../lib/rooms.js');
 var rooms = new Rooms();
 
 var constants = {
-    LOOPBACK_CLIENT_ID: 'LOOPBACK_CLIENT_ID',
-    TURN_BASE_URL: 'https://apprtc.ixuan.org:3000',
-    TURN_URL_TEMPLATE: '%s/turn?username=%s&key=%s',
-    TURN_SERVER: 'apprtc.ixuan.org:3478',
-    CEOD_KEY: '4080218913',
-    WSS_HOST_ACTIVE_HOST_KEY: 'wss_host_active_host', //memcache key for the active collider host.
-    WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
-    RESPONSE_ERROR: 'ERROR',
-    RESPONSE_UNKNOWN_ROOM: 'UNKNOWN_ROOM',
-    RESPONSE_UNKNOWN_CLIENT: 'UNKNOWN_CLIENT',
-    RESPONSE_ROOM_FULL: 'FULL',
+    ROOM_SERVER_HOST:          'apprtc.ixuan.org:3000',
+    TURN_SERVER:               'apprtc.ixuan.org:3478',
+    WSS_HOST_PORT_PAIRS:       ['apprtc.ixuan.org:8089'],
+
+    LOOPBACK_CLIENT_ID:        'LOOPBACK_CLIENT_ID',
+    TURN_URL_TEMPLATE:         'https://%s/turn?username=%s&key=%s',
+    CEOD_KEY:                  '4080218913',
+    WSS_HOST_ACTIVE_HOST_KEY:  'wss_host_active_host', //memcache key for the active collider host.
+    RESPONSE_ERROR:            'ERROR',
+    RESPONSE_UNKNOWN_ROOM:     'UNKNOWN_ROOM',
+    RESPONSE_UNKNOWN_CLIENT:   'UNKNOWN_CLIENT',
+    RESPONSE_ROOM_FULL:        'FULL',
     RESPONSE_DUPLICATE_CLIENT: 'DUPLICATE_CLIENT',
-    RESPONSE_SUCCESS: 'SUCCESS',
-    RESPONSE_INVALID_REQUEST: 'INVALID_REQUEST'
+    RESPONSE_SUCCESS:          'SUCCESS',
+    RESPONSE_INVALID_REQUEST:  'INVALID_REQUEST'
 
 };
 
@@ -159,17 +160,17 @@ function getWSSParameters(req) {
     }
     if (wssTLS && wssTLS == 'false') {
         return {
-            wssUrl: 'ws://' + wssHostPortPair + '/ws',
+            wssUrl:     'ws://' + wssHostPortPair + '/ws',
             wssPostUrl: 'http://' + wssHostPortPair,
-            host: match[1],
-            port: match[2] || 443
+            host:       match[1],
+            port:       match[2] || 443
         }
     } else {
         return {
-            wssUrl: 'wss://' + wssHostPortPair + '/ws',
+            wssUrl:     'wss://' + wssHostPortPair + '/ws',
             wssPostUrl: 'https://' + wssHostPortPair,
-            host: match[1],
-            port: match[2] || 443
+            host:       match[1],
+            port:       match[2] || 443
         }
     }
 }
@@ -193,7 +194,7 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
     // A HTTP server that will be used to find the right TURN servers to use, as
     // described in http://tools.ietf.org/html/draft-uberti-rtcweb-turn-rest-00.
     var turnBaseUrl = req.query['ts'];
-    if (!turnBaseUrl) turnBaseUrl = constants.TURN_BASE_URL;
+    if (!turnBaseUrl) turnBaseUrl = constants.ROOM_SERVER_HOST;
 
     /*
      Use "audio" and "video" to set the media stream constraints. Defined here:
@@ -288,19 +289,19 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
     var bypassJoinConfirmation = false; //TODO: add BYPASS_JOIN_CONFIRMATION flag in environment variable
 
     var params = {
-        'error_messages': errorMessages,
-        'is_loopback': JSON.stringify(debug == 'loopback'),
-        'pc_config': JSON.stringify(pcConfig),
-        'pc_constraints': JSON.stringify(pcConstraints),
-        'offer_constraints': JSON.stringify(offerConstraints),
-        'media_constraints': JSON.stringify(mediaConstraints),
-        'turn_url': turnUrl,
-        'turn_transports': turnTransports,
-        'include_loopback_js': includeLoopbackJS,
-        'wss_url': wssUrl,
-        'wss_post_url': wssPostUrl,
+        'error_messages':           errorMessages,
+        'is_loopback':              JSON.stringify(debug == 'loopback'),
+        'pc_config':                JSON.stringify(pcConfig),
+        'pc_constraints':           JSON.stringify(pcConstraints),
+        'offer_constraints':        JSON.stringify(offerConstraints),
+        'media_constraints':        JSON.stringify(mediaConstraints),
+        'turn_url':                 turnUrl,
+        'turn_transports':          turnTransports,
+        'include_loopback_js':      includeLoopbackJS,
+        'wss_url':                  wssUrl,
+        'wss_post_url':             wssPostUrl,
         'bypass_join_confirmation': JSON.stringify(bypassJoinConfirmation),
-        'version_info': JSON.stringify(getVersionInfo())
+        'version_info':             JSON.stringify(getVersionInfo())
     };
 
     var protocol = req.headers['x-forwarded-proto'];
@@ -383,6 +384,7 @@ router.get('/', function (req, res, next) {
     // Parse out parameters from request.
     var params = getRoomParameters(req, null, getClientId(req, res), null);
     res.render("index_template", params);
+    console.log("done");
 });
 
 router.get('/turn', function (req, res, next) {
@@ -390,23 +392,26 @@ router.get('/turn', function (req, res, next) {
     if (query.key !== constants.CEOD_KEY) {
         return res.send({'error': 'AppError', 'message': 'Key mismatch'});
     }
-    res.header("Access-Control-Allow-Origin", "*");
+
+    res.header("Access-Control-Allow-Origin", constants.ROOM_SERVER_HOST);
 
     if (!query['username']) {
         return res.send({'error': 'AppError', 'message': 'Must provide username.'});
     } else {
         var time_to_live = 600;
-        var timestamp = Math.floor(Date.now() / 1000) + time_to_live;
+        var timestamp = parseInt(Date.now() / 1000) + time_to_live;
         var turn_username = timestamp + ':' + query['username'];
+
         var sha1 = crypto.createHmac('sha1', constants.CEOD_KEY);
         sha1.setEncoding('base64');
         sha1.end(turn_username);
+
         var password = sha1.read();
         res.json({
             username: turn_username,
             password: password,
-            ttl: time_to_live,
-            "uris": [
+            ttl:      time_to_live,
+            "uris":   [
                 "turn:" + constants.TURN_SERVER + "?transport=udp",
                 "turn:" + constants.TURN_SERVER + "?transport=tcp",
                 "turn:" + constants.TURN_SERVER + "?transport=udp",
@@ -460,9 +465,9 @@ router.post('/message/:roomId/:clientId', function (req, res, next) {
             console.log('Forwarding message to collider from room ' + roomId + ' client ' + clientId);
             var wssParams = getWSSParameters(req);
             var postOptions = {
-                host: wssParams.host,//wssParams.host,
-                port: wssParams.port,
-                path: '/' + roomId + '/' + clientId,
+                host:   wssParams.host,//wssParams.host,
+                port:   wssParams.port,
+                path:   '/' + roomId + '/' + clientId,
                 method: 'POST'
             };
             var postRequest = https.request(postOptions, function (httpRes) {
