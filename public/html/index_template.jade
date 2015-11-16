@@ -42,7 +42,7 @@ body
     div
       #room-id-input-div
         input#room-id-input(type='text', autofocus='')
-        label#room-id-input-label.error-label.hidden(for='room-id-input') Room name must be 5 or more characters and include only letters and numbers.
+        label#room-id-input-label.error-label.hidden(for='room-id-input') Room name must be 1 or more characters and include only letters and numbers.
       #room-id-input-buttons
         button#join-button JOIN
         button#random-button RANDOM
@@ -95,8 +95,21 @@ body
   if !chromeapp
     != include_loopback_js
 
-
-  script(src='/js/apprtc.debug.js')
+  script(src='/js/util.js')
+  script(src='/js/adapter.js')
+  script(src='/js/appcontroller.js')
+  script(src='/js/call.js')
+  script(src='/js/constants.js')
+  script(src='/js/infobox.js')
+  script(src='/js/peerconnectionclient.js')
+  script(src='/js/roomselection.js')
+  script(src='/js/remotewebsocket.js')
+  script(src='/js/sdputils.js')
+  script(src='/js/signalingchannel.js')
+  script(src='/js/stats.js')
+  script(src='/js/storage.js')
+  script(src='/js/windowport.js')
+  //script(src='/js/apprtc.debug.js')
 
   if chromeapp
     script(src='/js/appwindow.js')

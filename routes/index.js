@@ -9,9 +9,9 @@ var Rooms = require('../lib/rooms.js');
 var rooms = new Rooms();
 
 var constants = {
-    ROOM_SERVER_HOST:          'apprtc.ixuan.org:3000',
-    TURN_SERVER:               'apprtc.ixuan.org:3478',
-    WSS_HOST_PORT_PAIRS:       ['apprtc.ixuan.org:8089'],
+    ROOM_SERVER_HOST:    'apprtc.ixuan.org:3000',
+    TURN_SERVER:         '192.168.1.106:3478',
+    WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
 
     LOOPBACK_CLIENT_ID:        'LOOPBACK_CLIENT_ID',
     TURN_URL_TEMPLATE:         'https://%s/turn?username=%s&key=%s',
@@ -40,6 +40,7 @@ function getClientId(req, res) {
         return req.cookies.clientId;
 
     var clientId = generateRandom(9);
+    console.log("send cookie clientId:%d", clientId);
     res.cookie("clientId", clientId, {secure: true});
     return clientId;
 }
@@ -276,7 +277,9 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
      but we don't provide client_id until a join. For now just generate
      a random id, but we should make this better.
      */
-    var username = clientId ? clientId : generateRandom(9);
+    if (!clientId)
+        throw new Error("No client id");
+    var username = clientId;
     var turnUrl = turnBaseUrl.length > 0 ? util.format(constants.TURN_URL_TEMPLATE, turnBaseUrl, username, constants.CEOD_KEY) : undefined;
 
     var pcConfig = makePCConfig(iceTransports);
@@ -334,7 +337,7 @@ function addClientToRoom(req, roomId, clientId, isLoopback, callback) {
         var isInitiator = false;
         var error = null;
         var occupancy = room.getOccupancy();
-        if (occupancy >= 2) {
+        if (occupancy >= 3) {
             error = constants.RESPONSE_ROOM_FULL;
             callback(error, {is_initiator: isInitiator, messages: []});
         } else if (room.hasClient(clientId)) {
@@ -425,6 +428,15 @@ router.post('/join/:roomId', function (req, res, next) {
     var roomId = req.params.roomId;
     var clientId = getClientId(req, res);
     var isLoopback = req.query['debug'] == 'loopback';
+
+    if (isLoopback) {
+        //Reject loopback user
+        res.send({
+            result: "DENIED"
+        });
+        return;
+    }
+
     addClientToRoom(req, roomId, clientId, isLoopback, function (error, result) {
         if (error) {
             console.error('Error adding client to room: ' + error + ', room_state=' + result.room_state);
@@ -485,6 +497,7 @@ router.post('/message/:roomId/:clientId', function (req, res, next) {
     });
 });
 
+//Room Page for Desktop Browser
 router.get('/r/:roomId', function (req, res, next) {
     var roomId = req.params.roomId;
     var key = getCacheKeyForRoom(req.headers.host, roomId);
@@ -499,7 +512,7 @@ router.get('/r/:roomId', function (req, res, next) {
             }
         }
         // Parse out room parameters from request.
-        var params = getRoomParameters(req, roomId, null, null);
+        var params = getRoomParameters(req, roomId, getClientId(req, res), null);
         // room_id/room_link will be included in the returned parameters
         // so the client will launch the requested room.
         res.render('index_template', params);
