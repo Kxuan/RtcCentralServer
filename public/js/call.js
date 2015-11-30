@@ -118,7 +118,13 @@ Call.prototype.hangup = function (async) {
     }
 
     if (this.localStream_) {
-        this.localStream_.stop();
+        var tracks = this.localStream_.getTracks();
+        var track;
+        while (tracks.length) {
+            track = tracks.pop();
+            track.stop();
+            this.localStream_.removeTrack(track);
+        }
         this.localStream_ = null;
     }
 
@@ -491,20 +497,20 @@ Call.prototype.sendSignalingMessage_ = function (message) {
     //Disable GAE Message, all message will be sent by SignalChannel
     this.channel_.send(msgString);
 
-/*    if (this.params_.isInitiator) {
-        // Initiator posts all messages to GAE. GAE will either store the messages
-        // until the other client connects, or forward the message to Collider if
-        // the other client is already connected.
-        // Must append query parameters in case we've specified alternate WSS url.
-        var path = this.roomServer_ + '/message/' + this.params_.roomId +
-            '/' + this.params_.clientId + window.location.search;
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', path, true);
-        xhr.send(msgString);
-        trace('C->GAE: ' + msgString);
-    } else {
-        this.channel_.send(msgString);
-    }*/
+    /*    if (this.params_.isInitiator) {
+     // Initiator posts all messages to GAE. GAE will either store the messages
+     // until the other client connects, or forward the message to Collider if
+     // the other client is already connected.
+     // Must append query parameters in case we've specified alternate WSS url.
+     var path = this.roomServer_ + '/message/' + this.params_.roomId +
+     '/' + this.params_.clientId + window.location.search;
+     var xhr = new XMLHttpRequest();
+     xhr.open('POST', path, true);
+     xhr.send(msgString);
+     trace('C->GAE: ' + msgString);
+     } else {
+     this.channel_.send(msgString);
+     }*/
 };
 
 Call.prototype.onError_ = function (message) {

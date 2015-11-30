@@ -10,12 +10,15 @@ var rooms = new Rooms();
 
 var constants = {
     ROOM_SERVER_HOST:    'apprtc.ixuan.org:3000',
-    TURN_SERVER:         '192.168.1.106:3478',
+    TURN_SERVER:         [
+        '192.168.1.106:3478',
+        '192.168.1.106:3479'
+    ],
     WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
 
-    LOOPBACK_CLIENT_ID:        'LOOPBACK_CLIENT_ID',
-    TURN_URL_TEMPLATE:         'https://%s/turn?username=%s&key=%s',
     CEOD_KEY:                  '4080218913',
+    LOOPBACK_CLIENT_ID:        'LOOPBACK_CLIENT_ID',
+    TURN_URL_TEMPLATE:         'https://%s/turn?username=%s',
     WSS_HOST_ACTIVE_HOST_KEY:  'wss_host_active_host', //memcache key for the active collider host.
     RESPONSE_ERROR:            'ERROR',
     RESPONSE_UNKNOWN_ROOM:     'UNKNOWN_ROOM',
@@ -39,10 +42,14 @@ function getClientId(req, res) {
     if (req.cookies.clientId)
         return req.cookies.clientId;
 
+    if (!res) {
+        throw new Error("client id not set");
+    }
     var clientId = generateRandom(9);
     console.log("send cookie clientId:%d", clientId);
     res.cookie("clientId", clientId, {secure: true});
     return clientId;
+
 }
 // HD is on by default for desktop Chrome, but not Android or Firefox (yet)
 function getHDDefault(userAgent) {
@@ -280,7 +287,7 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
     if (!clientId)
         throw new Error("No client id");
     var username = clientId;
-    var turnUrl = turnBaseUrl.length > 0 ? util.format(constants.TURN_URL_TEMPLATE, turnBaseUrl, username, constants.CEOD_KEY) : undefined;
+    var turnUrl = turnBaseUrl.length > 0 ? util.format(constants.TURN_URL_TEMPLATE, turnBaseUrl, username) : undefined;
 
     var pcConfig = makePCConfig(iceTransports);
     var pcConstraints = makePCConstraints(dtls, dscp, ipv6);
@@ -392,36 +399,35 @@ router.get('/', function (req, res, next) {
 
 router.get('/turn', function (req, res, next) {
     var query = req.query;
-    if (query.key !== constants.CEOD_KEY) {
-        return res.send({'error': 'AppError', 'message': 'Key mismatch'});
-    }
+    var username;
 
+    try {
+        username = getClientId(req, null);
+    } catch (ex) {
+        username = query.username;
+    }
     res.header("Access-Control-Allow-Origin", constants.ROOM_SERVER_HOST);
 
-    if (!query['username']) {
-        return res.send({'error': 'AppError', 'message': 'Must provide username.'});
-    } else {
-        var time_to_live = 600;
-        var timestamp = parseInt(Date.now() / 1000) + time_to_live;
-        var turn_username = timestamp + ':' + query['username'];
+    var time_to_live = 600;
+    var timestamp = parseInt(Date.now() / 1000) + time_to_live;
+    var turn_username = timestamp + ':' + username;
 
-        var sha1 = crypto.createHmac('sha1', constants.CEOD_KEY);
-        sha1.setEncoding('base64');
-        sha1.end(turn_username);
+    var sha1 = crypto.createHmac('sha1', constants.CEOD_KEY);
+    sha1.setEncoding('base64');
+    sha1.end(turn_username);
 
-        var password = sha1.read();
-        res.json({
-            username: turn_username,
-            password: password,
-            ttl:      time_to_live,
-            "uris":   [
-                "turn:" + constants.TURN_SERVER + "?transport=udp",
-                "turn:" + constants.TURN_SERVER + "?transport=tcp",
-                "turn:" + constants.TURN_SERVER + "?transport=udp",
-                "turn:" + constants.TURN_SERVER + "?transport=tcp"
-            ]
-        });
-    }
+    var password = sha1.read();
+
+    res.json({
+        username: turn_username,
+        password: password,
+        ttl:      time_to_live,
+        "uris":   constants.TURN_SERVER.reduce(function (arr, v) {
+            arr.push("turn:" + v + "?transport=udp");
+            arr.push("turn:" + v + "?transport=tcp");
+            return arr;
+        }, [])
+    });
 
 });
 router.post('/join/:roomId', function (req, res, next) {
