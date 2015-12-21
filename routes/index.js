@@ -11,8 +11,8 @@ var rooms = new Rooms();
 var constants = {
     ROOM_SERVER_HOST:    'apprtc.ixuan.org:3000',
     TURN_SERVER:         [
-        '192.168.1.106:3478',
-        '192.168.1.106:3479'
+        '192.168.42.49:3478',
+        '192.168.42.49:3479'
     ],
     WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
 
@@ -271,12 +271,6 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
     var ipv6 = req.query['ipv6'];
 
     var debug = req.query['debug'];
-    var includeLoopbackJS = '';
-    if (debug == 'loopback') {
-        // Set dtls to false as DTLS does not work for loopback.
-        dtls = 'false';
-        includeLoopbackJS = '<script src="/js/loopback.js"></script>';
-    }
 
 
     /*
@@ -307,7 +301,6 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
         'media_constraints':        JSON.stringify(mediaConstraints),
         'turn_url':                 turnUrl,
         'turn_transports':          turnTransports,
-        'include_loopback_js':      includeLoopbackJS,
         'wss_url':                  wssUrl,
         'wss_post_url':             wssPostUrl,
         'bypass_join_confirmation': JSON.stringify(bypassJoinConfirmation),

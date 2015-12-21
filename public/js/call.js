@@ -23,7 +23,7 @@ var Call = function (params) {
     this.channel_ = new SignalingChannel(params.wssUrl, params.wssPostUrl);
     this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
 
-    this.pcClient_ = null;
+    this.peerConnections = null;
     this.localStream_ = null;
 
     this.startTime = null;
@@ -51,56 +51,15 @@ Call.prototype.requestMediaAndTurnServers_ = function () {
 };
 
 Call.prototype.isInitiator = function () {
+    try {
+        console.error("Called isInitiator.");
+    } catch (ex) {
+    }
     return this.params_.isInitiator;
 };
 
 Call.prototype.start = function (roomId) {
     this.connectToRoom_(roomId);
-    if (this.params_.isLoopback) {
-        setupLoopback(this.params_.wssUrl, roomId);
-    }
-};
-
-Call.prototype.queueCleanupMessages_ = function () {
-    // Set up the cleanup queue.
-    // These steps mirror the cleanup done in hangup(), but will be
-    // executed when the Chrome App is closed by background.js.
-    apprtc.windowPort.sendMessage({
-        action:       Constants.QUEUEADD_ACTION,
-        queueMessage: {
-            action: Constants.XHR_ACTION,
-            method: 'POST',
-            url:    this.getLeaveUrl_(),
-            body:   null
-        }
-    });
-
-    apprtc.windowPort.sendMessage({
-        action:       Constants.QUEUEADD_ACTION,
-        queueMessage: {
-            action:   Constants.WS_ACTION,
-            wsAction: Constants.WS_SEND_ACTION,
-            data:     JSON.stringify({
-                cmd: 'send',
-                msg: JSON.stringify({type: 'bye'})
-            })
-        }
-    });
-
-    apprtc.windowPort.sendMessage({
-        action:       Constants.QUEUEADD_ACTION,
-        queueMessage: {
-            action: Constants.XHR_ACTION,
-            method: 'DELETE',
-            url:    this.channel_.getWssPostUrl(),
-            body:   null
-        }
-    });
-};
-
-Call.prototype.clearCleanupQueue_ = function () {
-    // Clear the cleanup queue.
-    apprtc.windowPort.sendMessage({action: Constants.QUEUECLEAR_ACTION});
 };
 
 Call.prototype.restart = function () {
@@ -112,10 +71,6 @@ Call.prototype.restart = function () {
 
 Call.prototype.hangup = function (async) {
     this.startTime = null;
-
-    if (isChromeApp()) {
-        this.clearCleanupQueue_();
-    }
 
     if (this.localStream_) {
         var tracks = this.localStream_.getTracks();
@@ -132,9 +87,14 @@ Call.prototype.hangup = function (async) {
         return;
     }
 
-    if (this.pcClient_) {
-        this.pcClient_.close();
-        this.pcClient_ = null;
+    if (this.peerConnections instanceof Array) {
+        this.peerConnections.forEach(function (pc) {
+            pc.close();
+        });
+        this.peerConnections = [];
+    } else if (this.peerConnections) {
+        this.peerConnections.close();
+        this.peerConnections = null;
     }
 
     // Send 'leave' to GAE. This must complete before saying BYE to other client.
@@ -227,26 +187,26 @@ Call.prototype.onRemoteHangup = function () {
     // On remote hangup this client becomes the new initiator.
     this.params_.isInitiator = true;
 
-    if (this.pcClient_) {
-        this.pcClient_.close();
-        this.pcClient_ = null;
+    if (this.peerConnections) {
+        this.peerConnections.close();
+        this.peerConnections = null;
     }
 
     this.startSignaling_();
 };
 
 Call.prototype.getPeerConnectionStates = function () {
-    if (!this.pcClient_) {
+    if (!this.peerConnections) {
         return null;
     }
-    return this.pcClient_.getPeerConnectionStates();
+    return this.peerConnections.getPeerConnectionStates();
 };
 
 Call.prototype.getPeerConnectionStats = function (callback) {
-    if (!this.pcClient_) {
+    if (!this.peerConnections) {
         return;
     }
-    this.pcClient_.getPeerConnectionStats(callback);
+    this.peerConnections.getPeerConnectionStats(callback);
 };
 
 Call.prototype.toggleVideoMute = function () {
@@ -326,13 +286,6 @@ Call.prototype.connectToRoom_ = function (roomId) {
         Promise.all([this.getTurnServersPromise_, this.getMediaPromise_])
             .then(function () {
                 this.startSignaling_();
-                if (isChromeApp()) {
-                    // We need to register the required clean up steps with the
-                    // background window as soon as we have the information available.
-                    // This is required because only the background window is notified
-                    // when the window closes.
-                    this.queueCleanupMessages_();
-                }
             }.bind(this)).catch(function (error) {
             this.onError_('Failed to start signaling: ' + error.message);
         }.bind(this));
@@ -415,19 +368,20 @@ Call.prototype.onUserMediaError_ = function (error) {
 };
 
 Call.prototype.maybeCreatePcClient_ = function () {
-    if (this.pcClient_) {
+
+    if (this.peerConnections) {
         return;
     }
     try {
-        this.pcClient_ = new PeerConnectionClient(this.params_, this.startTime);
-        this.pcClient_.onsignalingmessage = this.sendSignalingMessage_.bind(this);
-        this.pcClient_.onremotehangup = this.onremotehangup;
-        this.pcClient_.onremotesdpset = this.onremotesdpset;
-        this.pcClient_.onremotestreamadded = this.onremotestreamadded;
-        this.pcClient_.onsignalingstatechange = this.onsignalingstatechange;
-        this.pcClient_.oniceconnectionstatechange = this.oniceconnectionstatechange;
-        this.pcClient_.onnewicecandidate = this.onnewicecandidate;
-        this.pcClient_.onerror = this.onerror;
+        this.peerConnections = new PeerConnectionClient(this.params_, this.startTime);
+        this.peerConnections.onsignalingmessage = this.sendSignalingMessage_.bind(this);
+        this.peerConnections.onremotehangup = this.onremotehangup;
+        this.peerConnections.onremotesdpset = this.onremotesdpset;
+        this.peerConnections.onremotestreamadded = this.onremotestreamadded;
+        this.peerConnections.onsignalingstatechange = this.onsignalingstatechange;
+        this.peerConnections.oniceconnectionstatechange = this.oniceconnectionstatechange;
+        this.peerConnections.onnewicecandidate = this.onnewicecandidate;
+        this.peerConnections.onerror = this.onerror;
         trace('Created PeerConnectionClient');
     } catch (e) {
         this.onError_('Create PeerConnection exception: ' + e.message);
@@ -448,12 +402,12 @@ Call.prototype.startSignaling_ = function () {
     this.maybeCreatePcClient_();
     if (this.localStream_) {
         trace('Adding local stream.');
-        this.pcClient_.addStream(this.localStream_);
+        this.peerConnections.addStream(this.localStream_);
     }
     if (this.params_.isInitiator) {
-        this.pcClient_.startAsCaller(this.params_.offerConstraints);
+        this.peerConnections.startAsCaller(this.params_.offerConstraints);
     } else {
-        this.pcClient_.startAsCallee(this.params_.messages);
+        this.peerConnections.startAsCallee(this.params_.messages);
     }
 };
 
@@ -488,8 +442,10 @@ Call.prototype.joinRoom_ = function () {
 };
 
 Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
+    //FIXME You must tell maybeCreatePcClient which peer is sent message
     this.maybeCreatePcClient_();
-    this.pcClient_.receiveSignalingMessage(msg);
+
+    this.peerConnections.receiveSignalingMessage(msg);
 };
 
 Call.prototype.sendSignalingMessage_ = function (message) {
