@@ -11,8 +11,8 @@ var rooms = new Rooms();
 var constants = {
     ROOM_SERVER_HOST:    'apprtc.ixuan.org:3000',
     TURN_SERVER:         [
-        '192.168.42.49:3478',
-        '192.168.42.49:3479'
+        '192.168.56.101:3478',
+        '192.168.56.101:3479'
     ],
     WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
 

@@ -75,6 +75,10 @@ InfoBox.prototype.toggleInfoDiv = function() {
 
 InfoBox.prototype.refreshStats_ = function() {
   this.call_.getPeerConnectionStats(function(response) {
+    //FIXME xuan: getPeerConnectionStats now returns stats of all connections
+    console.info(response);
+    return;
+
     this.prevStats_ = this.stats_;
     this.stats_ = response.result();
     this.updateInfoDiv();
@@ -89,6 +93,10 @@ InfoBox.prototype.updateInfoDiv = function() {
     if (!states) {
       return;
     }
+
+    //FIXME xuan: states now returns an object which contains all PeerConnection states
+    console.info(states);
+    return;
     // Build the display.
     contents += this.buildLine_('States');
     contents += this.buildLine_('Signaling', states.signalingState);

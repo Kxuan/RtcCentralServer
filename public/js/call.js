@@ -23,7 +23,7 @@ var Call = function (params) {
     this.channel_ = new SignalingChannel(params.wssUrl, params.wssPostUrl);
     this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
 
-    this.peerConnections = null;
+    this.peerConnections = {__proto__: null};
     this.localStream_ = null;
 
     this.startTime = null;
@@ -50,14 +50,6 @@ Call.prototype.requestMediaAndTurnServers_ = function () {
     this.getTurnServersPromise_ = this.maybeGetTurnServers_();
 };
 
-Call.prototype.isInitiator = function () {
-    try {
-        console.error("Called isInitiator.");
-    } catch (ex) {
-    }
-    return this.params_.isInitiator;
-};
-
 Call.prototype.start = function (roomId) {
     this.connectToRoom_(roomId);
 };
@@ -75,7 +67,7 @@ Call.prototype.hangup = function (async) {
     if (this.localStream_) {
         var tracks = this.localStream_.getTracks();
         var track;
-        while (tracks.length) {
+        while (tracks.length > 0) {
             track = tracks.pop();
             track.stop();
             this.localStream_.removeTrack(track);
@@ -87,15 +79,10 @@ Call.prototype.hangup = function (async) {
         return;
     }
 
-    if (this.peerConnections instanceof Array) {
-        this.peerConnections.forEach(function (pc) {
-            pc.close();
-        });
-        this.peerConnections = [];
-    } else if (this.peerConnections) {
-        this.peerConnections.close();
-        this.peerConnections = null;
+    for (var id in this.peerConnections) {
+        this.peerConnections[id].close();
     }
+    this.peerConnections = {__proto__: null};
 
     // Send 'leave' to GAE. This must complete before saying BYE to other client.
     // When the other client sees BYE it attempts to post offer and candidates to
@@ -118,13 +105,6 @@ Call.prototype.hangup = function (async) {
             return sendUrlRequest('POST', path, async);
         }.bind(this),
         errorString: 'Error sending /leave:'
-    });
-    steps.push({
-        step:        function () {
-            // Send bye to the other client.
-            this.channel_.send(JSON.stringify({type: 'bye'}));
-        }.bind(this),
-        errorString: 'Error sending bye:'
     });
     steps.push({
         step:        function () {
@@ -181,32 +161,50 @@ Call.prototype.getLeaveUrl_ = function () {
         '/' + this.params_.clientId;
 };
 
-Call.prototype.onRemoteHangup = function () {
-    this.startTime = null;
+Call.prototype.closePeer = function (uid) {
+    if (!isNaN(parseInt(uid)))
+        throw new Error("uid is not a valid number");
 
-    // On remote hangup this client becomes the new initiator.
-    this.params_.isInitiator = true;
-
-    if (this.peerConnections) {
-        this.peerConnections.close();
-        this.peerConnections = null;
+    if (!(uid in this.peerConnections)) {
+        console.warn("User %d is not establish.");
+        return;
     }
 
-    this.startSignaling_();
+    this.peerConnections[uid].close();
+    delete this.peerConnections[uid];
+
+};
+
+Call.prototype.onRemoteHangup = function (uid) {
+    //TODO What should I do, if peer hangup?
 };
 
 Call.prototype.getPeerConnectionStates = function () {
-    if (!this.peerConnections) {
-        return null;
+    var statesObject = {__proto__: null},
+        hasUser      = false;
+    for (var uid in this.peerConnections) {
+        hasUser = true;
+        statesObject[uid] = this.peerConnections[uid].getPeerConnectionStates();
     }
-    return this.peerConnections.getPeerConnectionStates();
+
+    if (hasUser)
+        return statesObject;
+    else
+        return null;
 };
 
 Call.prototype.getPeerConnectionStats = function (callback) {
-    if (!this.peerConnections) {
-        return;
-    }
-    this.peerConnections.getPeerConnectionStats(callback);
+    if (Object.keys(this.peerConnections).length == 0)
+        return null;
+
+    return Promise.all(Object.keys(this.peerConnections).map(function (uid) {
+        var pc = this.peerConnections[uid];
+        return new Promise(function (resolve, reject) {
+            pc.getPeerConnectionStats(function (r) {
+                resolve(r.result());
+            });
+        });
+    }.bind(this))).then(callback);
 };
 
 Call.prototype.toggleVideoMute = function () {
@@ -247,11 +245,12 @@ Call.prototype.toggleAudioMute = function () {
 Call.prototype.connectToRoom_ = function (roomId) {
     this.params_.roomId = roomId;
     // Asynchronously open a WebSocket connection to WSS.
-    // TODO(jiayl): We don't need to wait for the signaling channel to open before
-    // start signaling.
+
+    //No. we need to wait signalChannel has been established.
+
     var channelPromise = this.channel_.open().catch(function (error) {
         this.onError_('WebSocket open error: ' + error.message);
-        return Promise.reject(error);
+        throw error;
     }.bind(this));
 
     // Asynchronously join the room.
@@ -265,7 +264,14 @@ Call.prototype.connectToRoom_ = function (roomId) {
                 this.params_.clientId = roomParams.client_id;
                 this.params_.roomId = roomParams.room_id;
                 this.params_.roomLink = roomParams.room_link;
-                this.params_.isInitiator = roomParams.is_initiator === 'true';
+                Object.defineProperty(this.params_, 'isInitiator', {
+                    get: function () {
+                        throw new Error("get isInitiator");
+                    },
+                    set: function () {
+                        throw new Error("set isInitiator");
+                    }
+                });
                 //jscs:enable requireCamelCaseOrUpperCaseIdentifiers
                 /* jshint ignore:end */
                 this.params_.messages = roomParams.messages;
@@ -365,23 +371,29 @@ Call.prototype.onUserMediaError_ = function (error) {
         error.name + '. Continuing without sending a stream.';
     this.onError_('getUserMedia error: ' + errorMessage);
     alert(errorMessage);
+    history.go(-1);
 };
 
-Call.prototype.maybeCreatePcClient_ = function () {
-
-    if (this.peerConnections) {
+Call.prototype.maybeCreatePcClient_ = function (uid) {
+    uid = parseInt(uid);
+    if (isNaN(uid))
+        throw new Error("uid is not a valid number");
+    if (uid in this.peerConnections) {
         return;
     }
     try {
-        this.peerConnections = new PeerConnectionClient(this.params_, this.startTime);
-        this.peerConnections.onsignalingmessage = this.sendSignalingMessage_.bind(this);
-        this.peerConnections.onremotehangup = this.onremotehangup;
-        this.peerConnections.onremotesdpset = this.onremotesdpset;
-        this.peerConnections.onremotestreamadded = this.onremotestreamadded;
-        this.peerConnections.onsignalingstatechange = this.onsignalingstatechange;
-        this.peerConnections.oniceconnectionstatechange = this.oniceconnectionstatechange;
-        this.peerConnections.onnewicecandidate = this.onnewicecandidate;
-        this.peerConnections.onerror = this.onerror;
+        var pc = this.peerConnections[uid] =
+            new PeerConnectionClient(this.sendMessageToPeer.bind(this, uid), this.params_, this.startTime);
+        pc.onsignalingmessage = function () {
+            throw new Error("Using removed method onsignalingmessage");
+        };
+        pc.onremotehangup = this.onremotehangup;
+        pc.onremotesdpset = this.onremotesdpset;
+        pc.onremotestreamadded = this.onremotestreamadded;
+        pc.onsignalingstatechange = this.onsignalingstatechange;
+        pc.oniceconnectionstatechange = this.oniceconnectionstatechange;
+        pc.onnewicecandidate = this.onnewicecandidate;
+        pc.onerror = this.onerror;
         trace('Created PeerConnectionClient');
     } catch (e) {
         this.onError_('Create PeerConnection exception: ' + e.message);
@@ -393,22 +405,11 @@ Call.prototype.maybeCreatePcClient_ = function () {
 
 Call.prototype.startSignaling_ = function () {
     trace('Starting signaling.');
-    if (this.isInitiator() && this.oncallerstarted) {
+    if (this.oncallerstarted) {
         this.oncallerstarted(this.params_.roomId, this.params_.roomLink);
     }
 
     this.startTime = window.performance.now();
-
-    this.maybeCreatePcClient_();
-    if (this.localStream_) {
-        trace('Adding local stream.');
-        this.peerConnections.addStream(this.localStream_);
-    }
-    if (this.params_.isInitiator) {
-        this.peerConnections.startAsCaller(this.params_.offerConstraints);
-    } else {
-        this.peerConnections.startAsCallee(this.params_.messages);
-    }
 };
 
 // Join the room and returns room parameters.
@@ -441,11 +442,19 @@ Call.prototype.joinRoom_ = function () {
     }.bind(this));
 };
 
-Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
-    //FIXME You must tell maybeCreatePcClient which peer is sent message
-    this.maybeCreatePcClient_();
+Call.prototype.onRecvSignalingChannelMessage_ = function (sender, msg) {
+    //FIXME Convert peerConnection to
+    this.maybeCreatePcClient_(sender);
+    try {
+        this.peerConnections[sender].receiveSignalingMessage(JSON.parse(msg));
+    } catch (ex) {
+        console.error(ex);
+    }
+};
 
-    this.peerConnections.receiveSignalingMessage(msg);
+Call.prototype.sendMessageToPeer = function (uid, message) {
+    var msgString = JSON.stringify(message);
+    this.channel_.send(msgString, uid);
 };
 
 Call.prototype.sendSignalingMessage_ = function (message) {
