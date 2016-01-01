@@ -35,11 +35,7 @@ SignalingChannel.prototype.open = function () {
 
     trace('Opening signaling channel.');
     return new Promise(function (resolve, reject) {
-        if (isChromeApp()) {
-            this.websocket_ = new RemoteWebSocket(this.wssUrl_, this.wssPostUrl_);
-        } else {
-            this.websocket_ = new WebSocket(this.wssUrl_);
-        }
+        this.websocket_ = new WebSocket(this.wssUrl_);
 
         this.websocket_.onopen = function () {
             trace('Signaling channel opened.');
@@ -101,7 +97,7 @@ SignalingChannel.prototype.register = function (roomId, clientId) {
     trace('Registering signaling channel.');
     var registerMessage = {
         cmd:      'register',
-        device:     'chrome',
+        device:   'chrome',
         roomid:   this.roomId_,
         clientid: this.clientId_
     };
