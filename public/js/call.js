@@ -462,6 +462,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
             switch (msg.device) {
                 case 'chrome':
                     pc = this.getPeerConnection(msg.id);
+                    pc.addStream(this.localStream_);
                     pc.startConnection();
                     break;
                 case 'android':

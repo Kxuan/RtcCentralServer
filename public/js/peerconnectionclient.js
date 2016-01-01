@@ -94,9 +94,18 @@ PeerConnectionClient.prototype.startConnection = function () {
 
     this.started_ = true;
     var constraints = PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_;
-    this.pc_.createOffer(this.setLocalSdpAndNotify_.bind(this, 'offer'),
+    this.pc_.createOffer(
+        function (sdp) {
+            sdp = this.adjustLocalSdpAndNotify(sdp);
+            this.sendMsg({
+                cmd:     "offer",
+                to:      this.peerId,
+                content: sdp
+            });
+        }.bind(this),
         this.onError_.bind(this, 'createOffer'),
-        constraints);
+        constraints
+    );
 
     return true;
 };
@@ -133,13 +142,22 @@ PeerConnectionClient.prototype.getPeerConnectionStats = function (callback) {
 
 PeerConnectionClient.prototype.doAnswer_ = function () {
     trace('Sending answer to peer.');
-    this.pc_.createAnswer(this.setLocalSdpAndNotify_.bind(this, 'answer'),
+    this.pc_.createAnswer(
+        function (sdp) {
+            sdp = this.adjustLocalSdpAndNotify(sdp);
+            this.sendMsg({
+                cmd:     "answer",
+                to:      this.peerId,
+                content: sdp
+            });
+        }.bind(this),
         this.onError_.bind(this, 'createAnswer'),
-        PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_);
+        PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_
+    );
 };
 
-PeerConnectionClient.prototype.setLocalSdpAndNotify_ =
-    function (cmd, sessionDescription) {
+PeerConnectionClient.prototype.adjustLocalSdpAndNotify =
+    function (sessionDescription) {
         sessionDescription.sdp = maybePreferAudioReceiveCodec(
             sessionDescription.sdp,
             this.params_);
@@ -156,11 +174,7 @@ PeerConnectionClient.prototype.setLocalSdpAndNotify_ =
             trace.bind(null, 'Set session description success.'),
             this.onError_.bind(this, 'setLocalDescription'));
 
-        this.sendMsg({
-            cmd:     cmd,
-            to:      this.peerId,
-            content: sessionDescription
-        });
+        return sessionDescription;
     };
 
 PeerConnectionClient.prototype.setRemoteSdp_ = function (message) {
