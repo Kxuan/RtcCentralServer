@@ -11,8 +11,8 @@ var rooms = new Rooms();
 var constants = {
     ROOM_SERVER_HOST:    'apprtc.ixuan.org:3000',
     TURN_SERVER:         [
-        '192.168.56.101:3478',
-        '192.168.56.101:3479'
+        'ixuan.org:3478',
+        'ixuan.org:3479'
     ],
     WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
 
@@ -31,21 +31,20 @@ var constants = {
 };
 
 
-function generateRandom(length) {
-    var word = parseInt(1 + Math.random() * 10).toString();
-    for (var i = 0; i < length - 1; i++) {
-        word += parseInt((Math.random() * 10));
-    }
-    return word;
-}
 function getClientId(req, res) {
-    if (req.cookies.clientId)
-        return req.cookies.clientId;
+    var clientId;
 
     if (!res) {
         throw new Error("client id not set");
     }
-    var clientId = generateRandom(9);
+
+    if (req.cookies.clientId) {
+        clientId = +req.cookies.clientId;
+        if (!isNaN(clientId))
+            return clientId;
+    }
+
+    clientId = Math.round(Number.MAX_SAFE_INTEGER * Math.random());
     console.log("send cookie clientId:%d", clientId);
     res.cookie("clientId", clientId, {secure: true});
     return clientId;
@@ -392,13 +391,7 @@ router.get('/', function (req, res, next) {
 
 router.get('/turn', function (req, res, next) {
     var query = req.query;
-    var username;
-
-    try {
-        username = getClientId(req, null);
-    } catch (ex) {
-        username = query.username;
-    }
+    var username = query.username;
     res.header("Access-Control-Allow-Origin", constants.ROOM_SERVER_HOST);
 
     var time_to_live = 600;
@@ -424,7 +417,11 @@ router.get('/turn', function (req, res, next) {
 
 });
 router.post('/join/:roomId', function (req, res, next) {
-    var roomId = req.params.roomId;
+    var roomId = +req.params.roomId;
+    if (isNaN(roomId)) {
+        res(new Error("Invalid roomId"));
+        return;
+    }
     var clientId = getClientId(req, res);
     var isLoopback = req.query['debug'] == 'loopback';
 

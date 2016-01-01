@@ -374,16 +374,16 @@ Call.prototype.onUserMediaError_ = function (error) {
     history.go(-1);
 };
 
-Call.prototype.maybeCreatePcClient_ = function (uid) {
-    uid = parseInt(uid);
-    if (isNaN(uid))
+Call.prototype.getPeerConnection = function (peerId) {
+    peerId = parseInt(peerId);
+    if (isNaN(peerId))
         throw new Error("uid is not a valid number");
-    if (uid in this.peerConnections) {
-        return;
+    if (peerId in this.peerConnections) {
+        return this.peerConnections[peerId];
     }
     try {
-        var pc = this.peerConnections[uid] =
-            new PeerConnectionClient(this.sendMessageToPeer.bind(this, uid), this.params_, this.startTime);
+        var pc = this.peerConnections[peerId] =
+            new PeerConnectionClient(peerId, this.sendMessageToPeer.bind(this), this.params_, this.startTime);
         pc.onsignalingmessage = function () {
             throw new Error("Using removed method onsignalingmessage");
         };
@@ -395,11 +395,12 @@ Call.prototype.maybeCreatePcClient_ = function (uid) {
         pc.onnewicecandidate = this.onnewicecandidate;
         pc.onerror = this.onerror;
         trace('Created PeerConnectionClient');
+        return pc;
     } catch (e) {
         this.onError_('Create PeerConnection exception: ' + e.message);
         alert('Cannot create RTCPeerConnection; ' +
             'WebRTC is not supported by this browser.');
-        return;
+        return null;
     }
 };
 
@@ -442,19 +443,43 @@ Call.prototype.joinRoom_ = function () {
     }.bind(this));
 };
 
-Call.prototype.onRecvSignalingChannelMessage_ = function (sender, msg) {
-    //FIXME Convert peerConnection to
-    this.maybeCreatePcClient_(sender);
-    try {
-        this.peerConnections[sender].receiveSignalingMessage(JSON.parse(msg));
-    } catch (ex) {
-        console.error(ex);
+Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
+    var pc;
+
+    switch (msg.type) {
+        case 'answer':
+        case 'candidate':
+        case 'offer':
+            pc = this.getPeerConnection(msg.from);
+            try {
+                pc.receiveSignalingMessage(msg);
+            } catch (ex) {
+                console.error(ex);
+            }
+            break;
+        case 'join':
+            console.info("%d(%s) join the room", msg.id, msg.device);
+            switch (msg.device) {
+                case 'chrome':
+                    pc = this.getPeerConnection(msg.id);
+                    pc.startConnection();
+                    break;
+                case 'android':
+                    //FIXME 处理手机客户端
+                    alert("一个安卓设备。");
+                    break;
+                default:
+                    console.error("What's that? Unknown Device Type.");
+                    break;
+            }
+            break;
+        default:
+            console.info("Message:", msg);
     }
 };
 
-Call.prototype.sendMessageToPeer = function (uid, message) {
-    var msgString = JSON.stringify(message);
-    this.channel_.send(msgString, uid);
+Call.prototype.sendMessageToPeer = function (message) {
+    this.channel_.send(JSON.stringify(message));
 };
 
 Call.prototype.sendSignalingMessage_ = function (message) {

@@ -70,11 +70,7 @@ SignalingChannel.prototype.open = function () {
                 trace('Failed to parse WSS message: ' + event.data);
                 return;
             }
-            if (message.error) {
-                trace('Signaling server error message: ' + message.error);
-                return;
-            }
-            this.onmessage(message.sender, message.msg);
+            this.onmessage(message);
         }.bind(this);
 
         this.websocket_.onerror = function () {
@@ -105,6 +101,7 @@ SignalingChannel.prototype.register = function (roomId, clientId) {
     trace('Registering signaling channel.');
     var registerMessage = {
         cmd:      'register',
+        device:     'chrome',
         roomid:   this.roomId_,
         clientid: this.clientId_
     };
@@ -125,39 +122,23 @@ SignalingChannel.prototype.close = function (async) {
     if (!this.clientId_ || !this.roomId_) {
         return;
     }
-    // Tell WSS that we're done.
-    var path = this.getWssPostUrl();
 
-    return sendUrlRequest('DELETE', path, async).catch(function (error) {
-        trace('Error deleting web socket connection: ' + error.message);
-    }.bind(this)).then(function () {
-        this.clientId_ = null;
-        this.roomId_ = null;
-        this.registered_ = false;
-    }.bind(this));
+    this.clientId_ = null;
+    this.roomId_ = null;
+    this.registered_ = false;
 };
 
-SignalingChannel.prototype.send = function (message, to) {
+SignalingChannel.prototype.send = function (message) {
     if (!this.roomId_ || !this.clientId_) {
         trace('ERROR: SignalingChannel has not registered.');
         return;
     }
     trace('C->WSS: ' + message);
 
-    var wssMessage = {
-        cmd: 'send',
-        msg: message,
-        to:  to
-    };
-    var msgString = JSON.stringify(wssMessage);
-
     if (this.websocket_ && this.websocket_.readyState === WebSocket.OPEN) {
-        this.websocket_.send(msgString);
+        this.websocket_.send(message);
     } else {
-        var path = this.getWssPostUrl();
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', path, true);
-        xhr.send(wssMessage.msg);
+        throw new Error("Websocket is not ready!");
     }
 };
 
