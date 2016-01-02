@@ -20,18 +20,7 @@ var reattachMediaStream = null;
 var webrtcDetectedBrowser = null;
 var webrtcDetectedVersion = null;
 
-function trace(text) {
-    // This function is used for logging.
-    if (text[text.length - 1] === '\n') {
-        text = text.substring(0, text.length - 1);
-    }
-    if (window.performance) {
-        var now = (window.performance.now() / 1000).toFixed(3);
-        console.trace(now + ': ' + text);
-    } else {
-        console.trace(text);
-    }
-}
+var trace = console.trace.bind(console);
 
 if (navigator.mozGetUserMedia) {
     console.log('This appears to be Firefox');

@@ -148,6 +148,7 @@ PeerConnectionClient.prototype.doAnswer_ = function () {
             sdp = this.adjustLocalSdpAndNotify(sdp);
             this.sendMsg({
                 cmd:     "answer",
+                accept:  true,
                 to:      this.peerId,
                 content: sdp
             });
