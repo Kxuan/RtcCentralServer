@@ -187,7 +187,7 @@ function getVersionInfo() {
     return undefined;
 }
 
-function getRoomParameters(req, roomId, clientId, isInitiator) {
+function getRoomParameters(req, roomId, clientId) {
     var errorMessages = [];
     var userAgent = req.headers['user-agent'];
     //Which ICE candidates to allow. This is useful for forcing a call to run over TURN, by setting it=relay.
@@ -315,9 +315,6 @@ function getRoomParameters(req, roomId, clientId, isInitiator) {
     if (clientId) {
         params['client_id'] = clientId;
     }
-    if (typeof isInitiator === 'boolean') {
-        params['is_initiator'] = JSON.stringify(isInitiator);
-    }
 
     return params;
 }
@@ -384,7 +381,7 @@ function saveMessageFromClient(host, roomId, clientId, message, callback) {
 
 router.get('/', function (req, res, next) {
     // Parse out parameters from request.
-    var params = getRoomParameters(req, null, getClientId(req, res), null);
+    var params = getRoomParameters(req, null, getClientId(req, res));
     res.render("index_template", params);
     console.log("done");
 });
@@ -433,23 +430,13 @@ router.post('/join/:roomId', function (req, res, next) {
         return;
     }
 
-    addClientToRoom(req, roomId, clientId, isLoopback, function (error, result) {
-        if (error) {
-            console.error('Error adding client to room: ' + error + ', room_state=' + result.room_state);
-            res.send({result: error, params: result});
-            return;
-        }
-        var params = getRoomParameters(req, roomId, clientId, result.is_initiator);
-        params.messages = result.messages;
-        //TODO(tkchin): Clean up response format. For simplicity put everything in
-        //params for now.
-        res.send({
-            result: 'SUCCESS',
-            params: params
-        });
-        console.log('User ' + clientId + ' joined room ' + roomId);
-        console.log('Room ' + roomId + ' has state ' + result.room_state);
-
+    var params = getRoomParameters(req, roomId, clientId);
+    params.messages = [];
+    //TODO(tkchin): Clean up response format. For simplicity put everything in
+    //params for now.
+    res.send({
+        result: 'SUCCESS',
+        params: params
     });
 });
 
@@ -508,7 +495,7 @@ router.get('/r/:roomId', function (req, res, next) {
             }
         }
         // Parse out room parameters from request.
-        var params = getRoomParameters(req, roomId, getClientId(req, res), null);
+        var params = getRoomParameters(req, roomId, getClientId(req, res));
         // room_id/room_link will be included in the returned parameters
         // so the client will launch the requested room.
         res.render('index_template', params);
