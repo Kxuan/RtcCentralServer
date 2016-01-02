@@ -451,6 +451,9 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         case 'candidate':
         case 'offer':
             pc = this.getPeerConnection(msg.from);
+            if (msg.type == 'offer') {
+                pc.addStream(this.localStream_);
+            }
             try {
                 pc.receiveSignalingMessage(msg);
             } catch (ex) {
@@ -466,8 +469,8 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
                     pc.startConnection();
                     break;
                 case 'android':
-                    //FIXME 处理手机客户端
-                    alert("一个安卓设备。");
+                    //TODO 安卓设备，如何处理？
+
                     break;
                 default:
                     console.error("What's that? Unknown Device Type.");
