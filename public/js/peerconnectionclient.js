@@ -98,9 +98,10 @@ PeerConnectionClient.prototype.startConnection = function () {
         function (sdp) {
             sdp = this.adjustLocalSdpAndNotify(sdp);
             this.sendMsg({
-                cmd:     "offer",
-                to:      this.peerId,
-                content: sdp
+                cmd:      "offer",
+                to:       this.peerId,
+                isHelper: false,
+                content:  sdp
             });
         }.bind(this),
         this.onError_.bind(this, 'createOffer'),
@@ -210,6 +211,7 @@ PeerConnectionClient.prototype.processSignalingMessage_ = function (message) {
                     this.pc_.signalingState);
                 return;
             }
+            trace("isHelper:", !!message.isHelper);
             this.setRemoteSdp_(message.content);
             this.doAnswer_();
             break;

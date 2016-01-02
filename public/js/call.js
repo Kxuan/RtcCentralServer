@@ -383,7 +383,7 @@ Call.prototype.getPeerConnection = function (peerId) {
     }
     try {
         var pc = this.peerConnections[peerId] =
-            new PeerConnectionClient(peerId, this.sendMessageToPeer.bind(this), this.params_, this.startTime);
+            new PeerConnectionClient(peerId, this.sendSignalingMessage_.bind(this), this.params_, this.startTime);
         pc.onsignalingmessage = function () {
             throw new Error("Using removed method onsignalingmessage");
         };
@@ -477,10 +477,6 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         default:
             console.info("Message:", msg);
     }
-};
-
-Call.prototype.sendMessageToPeer = function (message) {
-    this.channel_.send(JSON.stringify(message));
 };
 
 Call.prototype.sendSignalingMessage_ = function (message) {
