@@ -5,8 +5,6 @@ var http = require('http');
 var crypto = require('crypto');
 var express = require('express');
 var router = express.Router();
-var Rooms = require('../lib/rooms.js');
-var rooms = new Rooms();
 
 var constants = {
     ROOM_SERVER_HOST:    'apprtc.ixuan.org:3000',
@@ -319,65 +317,6 @@ function getRoomParameters(req, roomId, clientId) {
     return params;
 }
 
-function getCacheKeyForRoom(host, roomId) {
-    return host + "/" + roomId;
-}
-
-function addClientToRoom(req, roomId, clientId, isLoopback, callback) {
-    var key = getCacheKeyForRoom(req.headers.host, roomId);
-    rooms.createIfNotExist(key, function (error, room) {
-        if (error) {
-            callback(error);
-            return;
-        }
-        var isInitiator = false;
-        var error = null;
-        var occupancy = room.getOccupancy();
-        if (occupancy >= 3) {
-            error = constants.RESPONSE_ROOM_FULL;
-            callback(error, {is_initiator: isInitiator, messages: []});
-        } else if (room.hasClient(clientId)) {
-            error = constants.RESPONSE_DUPLICATE_CLIENT;
-            callback(error, {is_initiator: isInitiator, messages: []});
-        } else {
-            room.join(clientId, function (error, client, otherClient) {
-                if (error) {
-                    callback(error, {is_initiator: isInitiator, messages: []});
-                    return;
-                }
-                if (client.isInitiator && isLoopback) {
-                    room.join(constants.LOOPBACK_CLIENT_ID);
-                }
-                var messages = otherClient ? otherClient.messages : [];
-                if (otherClient) otherClient.clearMessages();
-                console.log('Added client ' + clientId + ' in room ' + roomId);
-                callback(null, {is_initiator: client.isInitiator, messages: messages, room_state: room.toString()});
-            });
-        }
-
-    });
-}
-
-function saveMessageFromClient(host, roomId, clientId, message, callback) {
-    var text = message;
-    var key = getCacheKeyForRoom(host, roomId);
-    rooms.get(key, function (error, room) {
-        if (!room) {
-            console.warn('Unknown room: ' + roomId);
-            callback({error: constants.RESPONSE_UNKNOWN_ROOM}, false);
-        } else if (!room.hasClient(clientId)) {
-            console.warn('Unknown client: ' + clientId);
-            callback({error: constants.RESPONSE_UNKNOWN_CLIENT}, false);
-        } else if (room.getOccupancy() > 1) {
-            callback(null, false);
-        } else {
-            var client = room.getClient(clientId);
-            client.addMessage(text);
-            console.log('Saved message for client ' + clientId + ':' + client.toString() + ' in room ' + roomId);
-            callback(null, true);
-        }
-    });
-}
 
 router.get('/', function (req, res, next) {
     // Parse out parameters from request.
@@ -440,100 +379,14 @@ router.post('/join/:roomId', function (req, res, next) {
     });
 });
 
-router.post('/message/:roomId/:clientId', function (req, res, next) {
-    var roomId = req.params.roomId;
-    var clientId = req.params.clientId;
-    var message = req.body;
-    saveMessageFromClient(req.headers.host, roomId, clientId, message, function (error, saved) {
-        if (error) {
-            res.send({result: error});
-            return;
-        }
-        if (saved) {
-            res.send({result: constants.RESPONSE_SUCCESS});
-        } else {
-            //Other client joined, forward to collider. Do this outside the lock.
-            //  Note: this may fail in local dev server due to not having the right
-            //certificate file locally for SSL validation.
-            //  Note: loopback scenario follows this code path.
-            //  TODO(tkchin): consider async fetch here.
-            console.log('Forwarding message to collider from room ' + roomId + ' client ' + clientId);
-            var wssParams = getWSSParameters(req);
-            var postOptions = {
-                host:   wssParams.host,//wssParams.host,
-                port:   wssParams.port,
-                path:   '/' + roomId + '/' + clientId,
-                method: 'POST'
-            };
-            var postRequest = https.request(postOptions, function (httpRes) {
-                if (httpRes.statusCode == 200) {
-                    res.send({result: constants.RESPONSE_SUCCESS});
-                } else {
-                    console.error('Failed to send message to collider: ' + httpRes.statusCode);
-                    // TODO(tkchin): better error handling.
-                    res.status(httpRes.statusCode);
-                }
-            });
-            postRequest.write(message);
-            postRequest.end();
-        }
-    });
-});
-
 //Room Page for Desktop Browser
 router.get('/r/:roomId', function (req, res, next) {
     var roomId = req.params.roomId;
-    var key = getCacheKeyForRoom(req.headers.host, roomId);
-    rooms.get(key, function (error, room) {
-        if (room) {
-            console.log('Room ' + roomId + ' has state ' + room.toString());
-            // Check if room is full
-            if (room.getOccupancy() >= 2) {
-                console.log('Room ' + roomId + ' is full');
-                res.render('full_template', {});
-                return;
-            }
-        }
-        // Parse out room parameters from request.
-        var params = getRoomParameters(req, roomId, getClientId(req, res));
-        // room_id/room_link will be included in the returned parameters
-        // so the client will launch the requested room.
-        res.render('index_template', params);
-    });
-});
-
-router.post('/leave/:roomId/:clientId', function (req, res, next) {
-    var roomId = req.params.roomId;
-    var clientId = req.params.clientId;
-    var key = getCacheKeyForRoom(req.headers.host, roomId);
-    rooms.get(key, function (error, room) {
-        if (!room) {
-            console.warn('Unknown room: ' + roomId);
-            res.send({result: constants.RESPONSE_UNKNOWN_ROOM});
-            //callback({error: constants.RESPONSE_UNKNOWN_ROOM}, false);
-        } else if (!room.hasClient(clientId)) {
-            console.warn('Unknown client: ' + clientId);
-            res.send({result: constants.RESPONSE_UNKNOWN_CLIENT});
-            //callback({error: constants.RESPONSE_UNKNOWN_CLIENT}, false);
-        } else {
-            room.removeClient(clientId, function (error, isRemoved, otherClient) {
-                if (error) {
-                    res.send({result: error});
-                    return;
-                }
-                if (room.hasClient(constants.LOOPBACK_CLIENT_ID)) {
-                    room.removeClient(constants.LOOPBACK_CLIENT_ID, function (error, isRemoved) {
-                        res.send({result: constants.RESPONSE_SUCCESS});
-                    });
-                } else {
-                    if (otherClient) {
-                        otherClient.isInitiator = true;
-                    }
-                    res.send({result: constants.RESPONSE_SUCCESS});
-                }
-            });
-        }
-    });
+    // Parse out room parameters from request.
+    var params = getRoomParameters(req, roomId, getClientId(req, res));
+    // room_id/room_link will be included in the returned parameters
+    // so the client will launch the requested room.
+    res.render('index_template', params);
 });
 
 module.exports = router;
