@@ -290,8 +290,8 @@ function getRoomParameters(req, roomId, clientId) {
     var bypassJoinConfirmation = false; //TODO: add BYPASS_JOIN_CONFIRMATION flag in environment variable
 
     var params = {
+        'client_id':                clientId,
         'error_messages':           errorMessages,
-        'is_loopback':              JSON.stringify(debug == 'loopback'),
         'pc_config':                JSON.stringify(pcConfig),
         'pc_constraints':           JSON.stringify(pcConstraints),
         'offer_constraints':        JSON.stringify(offerConstraints),
@@ -309,9 +309,6 @@ function getRoomParameters(req, roomId, clientId) {
     if (roomId) {
         params['room_id'] = roomId;
         params['room_link'] = protocol + "://" + req.headers.host + '/r/' + roomId + '?' + querystring.stringify(req.query);
-    }
-    if (clientId) {
-        params['client_id'] = clientId;
     }
 
     return params;
@@ -353,6 +350,7 @@ router.get('/turn', function (req, res, next) {
 
 });
 router.post('/join/:roomId', function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", constants.ROOM_SERVER_HOST);
     var roomId = +req.params.roomId;
     if (isNaN(roomId)) {
         res(new Error("Invalid roomId"));

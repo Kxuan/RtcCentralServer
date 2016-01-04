@@ -109,7 +109,7 @@ SignalingChannel.prototype.register = function (roomId, clientId) {
     trace('Signaling channel registered.');
 };
 
-SignalingChannel.prototype.close = function (async) {
+SignalingChannel.prototype.close = function () {
     if (this.websocket_) {
         this.websocket_.close();
         this.websocket_ = null;

@@ -84,76 +84,11 @@ Call.prototype.hangup = function (async) {
     }
     this.peerConnections = {__proto__: null};
 
-    // Send 'leave' to GAE. This must complete before saying BYE to other client.
-    // When the other client sees BYE it attempts to post offer and candidates to
-    // GAE. GAE needs to know that we're disconnected at that point otherwise
-    // it will forward messages to this client instead of storing them.
-
-    // This section of code is executed in both sync and async depending on
-    // where it is called from. When the browser is closed, the requests must
-    // be executed as sync to finish before the browser closes. When called
-    // from pressing the hang up button, the requests are executed async.
-
-    // If you modify the steps used to hang up a call, you must also modify
-    // the clean up queue steps set up in queueCleanupMessages_.');
-
-    var steps = [];
-    steps.push({
-        step:        function () {
-            // Send POST request to /leave.
-            var path = this.getLeaveUrl_();
-            return sendUrlRequest('POST', path, async);
-        }.bind(this),
-        errorString: 'Error sending /leave:'
-    });
-    steps.push({
-        step:        function () {
-            // Close signaling channel.
-            return this.channel_.close(async);
-        }.bind(this),
-        errorString: 'Error closing signaling channel:'
-    });
-    steps.push({
-        step:        function () {
-            this.params_.previousRoomId = this.params_.roomId;
-            this.params_.roomId = null;
-            this.params_.clientId = null;
-        }.bind(this),
-        errorString: 'Error setting params:'
-    });
-
-    if (async) {
-        var errorHandler = function (errorString, error) {
-            trace(errorString + ' ' + error.message);
-        };
-        var promise = Promise.resolve();
-        for (var i = 0; i < steps.length; ++i) {
-            promise = promise.then(steps[i].step).catch(
-                errorHandler.bind(this, steps[i].errorString));
-        }
-
-        return promise;
-    } else {
-        // Execute the cleanup steps.
-        var executeStep = function (executor, errorString) {
-            try {
-                executor();
-            } catch (ex) {
-                trace(errorString + ' ' + ex);
-            }
-        };
-
-        for (var j = 0; j < steps.length; ++j) {
-            executeStep(steps[j].step, steps[j].errorString);
-        }
-
-        if (this.params_.roomId !== null || this.params_.clientId !== null) {
-            trace('ERROR: sync cleanup tasks did not complete successfully.');
-        } else {
-            trace('Cleanup completed.');
-        }
-        return Promise.resolve();
-    }
+    // Close signaling channel.
+    this.channel_.close(async);
+    this.params_.previousRoomId = this.params_.roomId;
+    this.params_.roomId = null;
+    this.params_.clientId = null;
 };
 
 Call.prototype.getLeaveUrl_ = function () {
