@@ -106,55 +106,18 @@ var AppController = function(loadingParams) {
     this.localStream_ = null;
     this.remoteVideoResetTimer_ = null;
 
-    // If the params has a roomId specified, we should connect to that room
-    // immediately. If not, show the room selection UI.
-    if (this.loadingParams_.roomId) {
-      this.createCall_();
-
-      // Ask the user to confirm.
-      if (!RoomSelection.matchRandomRoomPattern(this.loadingParams_.roomId)) {
-        // Show the room name only if it does not match the random room pattern.
-        $(UI_CONSTANTS.confirmJoinRoomSpan).textContent = ' "' +
-            this.loadingParams_.roomId + '"';
-      }
-      var confirmJoinDiv = $(UI_CONSTANTS.confirmJoinDiv);
-      this.show_(confirmJoinDiv);
-
-      $(UI_CONSTANTS.confirmJoinButton).onclick = function() {
-        this.hide_(confirmJoinDiv);
-
-        // Record this room in the recently used list.
-        var recentlyUsedList = new RoomSelection.RecentlyUsedList();
-        recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
-        this.finishCallSetup_(this.loadingParams_.roomId);
-      }.bind(this);
-
-      if (this.loadingParams_.bypassJoinConfirmation) {
-        $(UI_CONSTANTS.confirmJoinButton).onclick();
-      }
-    } else {
-      // Display the room selection UI.
-      this.showRoomSelection_();
-    }
+    this.showRoomSelection_();
   }.bind(this)).catch(function(error) {
     trace('Error initializing: ' + error.message);
   }.bind(this));
 };
 
 AppController.prototype.createCall_ = function() {
-  this.call_ = new Call(this.loadingParams_);
+  this.call_ = new Call();
   this.infoBox_ = new InfoBox($(UI_CONSTANTS.infoDiv),
                               this.remoteVideo_,
                               this.call_,
-                              this.loadingParams_.versionInfo);
-
-  var roomErrors = this.loadingParams_.errorMessages;
-  if (roomErrors && roomErrors.length > 0) {
-    for (var i = 0; i < roomErrors.length; ++i) {
-      this.infoBox_.pushErrorMessage(roomErrors[i]);
-    }
-    return;
-  }
+                              'Alpha-Test');
 
   // TODO(jiayl): replace callbacks with events.
   this.call_.onremotehangup = this.onRemoteHangup_.bind(this);

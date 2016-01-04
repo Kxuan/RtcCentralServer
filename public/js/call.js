@@ -16,13 +16,7 @@
 
 'use strict';
 
-var Call = function (params) {
-    this.params_ = params;
-    this.roomServer_ = params.roomServer || '';
-
-    this.channel_ = new SignalingChannel(params.wssUrl, params.wssPostUrl);
-    this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
-
+var Call = function () {
     this.peerConnections = {__proto__: null};
     this.localStream_ = null;
 
@@ -42,7 +36,6 @@ var Call = function (params) {
 
     this.getMediaPromise_ = null;
     this.getTurnServersPromise_ = null;
-    this.requestMediaAndTurnServers_();
 };
 
 Call.prototype.requestMediaAndTurnServers_ = function () {
@@ -51,7 +44,16 @@ Call.prototype.requestMediaAndTurnServers_ = function () {
 };
 
 Call.prototype.start = function (roomId) {
-    this.connectToRoom_(roomId);
+    this.joinRoom_(roomId).then(function (params) {
+        this.params_ = params;
+        this.params_.mediaConstraints = JSON.parse(params.media_constraints);
+
+        this.channel_ = new SignalingChannel(params.wss_url);
+        this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
+
+        this.requestMediaAndTurnServers_();
+        this.connectToRoom_(roomId);
+    }.bind(this));
 };
 
 Call.prototype.restart = function () {
@@ -89,11 +91,6 @@ Call.prototype.hangup = function (async) {
     this.params_.previousRoomId = this.params_.roomId;
     this.params_.roomId = null;
     this.params_.clientId = null;
-};
-
-Call.prototype.getLeaveUrl_ = function () {
-    return this.roomServer_ + '/leave/' + this.params_.roomId +
-        '/' + this.params_.clientId;
 };
 
 Call.prototype.closePeer = function (uid) {
@@ -179,45 +176,14 @@ Call.prototype.toggleAudioMute = function () {
 // registration once GAE registration completes.
 Call.prototype.connectToRoom_ = function (roomId) {
     this.params_.roomId = roomId;
-    // Asynchronously open a WebSocket connection to WSS.
+    this.params_.clientId = this.params_.client_id;
+    this.params_.roomId = this.params_.room_id;
+    this.params_.roomLink = this.params_.room_link;
 
-    //No. we need to wait signalChannel has been established.
-
-    var channelPromise = this.channel_.open().catch(function (error) {
-        this.onError_('WebSocket open error: ' + error.message);
-        throw error;
-    }.bind(this));
-
-    // Asynchronously join the room.
-    var joinPromise =
-            this.joinRoom_().then(function (roomParams) {
-                // The only difference in parameters should be clientId and isInitiator,
-                // and the turn servers that we requested.
-                // TODO(tkchin): clean up response format. JSHint doesn't like it.
-                /* jshint ignore:start */
-                //jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-                this.params_.clientId = roomParams.client_id;
-                this.params_.roomId = roomParams.room_id;
-                this.params_.roomLink = roomParams.room_link;
-                Object.defineProperty(this.params_, 'isInitiator', {
-                    get: function () {
-                        throw new Error("get isInitiator");
-                    },
-                    set: function () {
-                        throw new Error("set isInitiator");
-                    }
-                });
-                //jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-                /* jshint ignore:end */
-                this.params_.messages = roomParams.messages;
-            }.bind(this)).catch(function (error) {
-                this.onError_('Room server join error: ' + error.message);
-                return Promise.reject(error);
-            }.bind(this));
 
     // We only register with WSS if the web socket connection is open and if we're
     // already registered with GAE.
-    Promise.all([channelPromise, joinPromise]).then(function () {
+    this.channel_.open().then(function () {
         this.channel_.register(this.params_.roomId, this.params_.clientId);
 
         // We only start signaling after we have registered the signaling channel
@@ -319,9 +285,7 @@ Call.prototype.getPeerConnection = function (peerId) {
     try {
         var pc = this.peerConnections[peerId] =
             new PeerConnectionClient(peerId, this.sendSignalingMessage_.bind(this), this.params_, this.startTime);
-        pc.onsignalingmessage = function () {
-            throw new Error("Using removed method onsignalingmessage");
-        };
+
         pc.onremotehangup = this.onremotehangup;
         pc.onremotesdpset = this.onremotesdpset;
         pc.onremotestreamadded = this.onremotestreamadded;
@@ -349,13 +313,13 @@ Call.prototype.startSignaling_ = function () {
 };
 
 // Join the room and returns room parameters.
-Call.prototype.joinRoom_ = function () {
+Call.prototype.joinRoom_ = function (roomId) {
+    if (!roomId)
+        throw new Error("Missing room id");
+
     return new Promise(function (resolve, reject) {
-        if (!this.params_.roomId) {
-            reject(Error('Missing room id.'));
-        }
-        var path = this.roomServer_ + '/join/' +
-            this.params_.roomId + window.location.search;
+        var path = location.origin + '/join/' +
+            roomId + window.location.search;
 
         sendAsyncUrlRequest('POST', path).then(function (response) {
             var responseObj = parseJSON(response);

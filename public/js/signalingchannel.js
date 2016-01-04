@@ -14,9 +14,8 @@
 'use strict';
 
 // This class implements a signaling channel based on WebSocket.
-var SignalingChannel = function (wssUrl, wssPostUrl) {
+var SignalingChannel = function (wssUrl) {
     this.wssUrl_ = wssUrl;
-    this.wssPostUrl_ = wssPostUrl;
     this.roomId_ = null;
     this.clientId_ = null;
     this.websocket_ = null;
@@ -32,7 +31,9 @@ SignalingChannel.prototype.open = function () {
         trace('ERROR: SignalingChannel has already opened.');
         return;
     }
-
+    if (!this.wssUrl_) {
+        throw new Error("No wss url was set");
+    }
     trace('Opening signaling channel.');
     return new Promise(function (resolve, reject) {
         this.websocket_ = new WebSocket(this.wssUrl_);
@@ -136,8 +137,4 @@ SignalingChannel.prototype.send = function (message) {
     } else {
         throw new Error("Websocket is not ready!");
     }
-};
-
-SignalingChannel.prototype.getWssPostUrl = function () {
-    return this.wssPostUrl_ + '/' + this.roomId_ + '/' + this.clientId_;
 };
