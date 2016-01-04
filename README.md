@@ -17,16 +17,35 @@ This still a work in progress. We are in the process of cleaning up the code and
 Setting up the environment just requires the following:
 
 ```
-git clone https://github.com/ISBX/apprtc-node-server.git ./apprtc-node-server
+git clone https://github.com/Kxuan/apprtc-node-server.git ./apprtc-node-server
 cd ./apprtc-node-server
 npm install
+```
+
+## Configuration File
+You need a configuration file to start the server.
+The example configuration file:
+```json
+{
+  "debug": "*",
+  "server": {
+    "listen": 3000,
+    "https": true,
+    "key": "/path/to/unencrypted/rsa/private/key",
+    "cert": "/path/to/unencrypted/x509certificate",
+    "ca": [
+      "/path/to/unencrypted/CA/certificate"
+    ],
+    "handshakeTimeout": 10000
+  }
+}
 ```
 
 ## Running the AppRTC Node Server
 The apprtc-node-server uses ExpressJS. To run the node server after setup just execute:
 
 ```
-node ./bin/www
+node ./start.js /path/to/configuration/file
 ```
 
-Navigate to `http://localhost:3000` to run the WebRTC Demo
+Navigate to `https://localhost:3000` to run the WebRTC Demo
