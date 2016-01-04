@@ -7,7 +7,6 @@
 var app = require('../app');
 var fs = require('fs');
 var debug = require('debug')('AppRTC-node-server:server');
-var https = require('https');
 
 /**
  * Get port from environment and store in Express.
@@ -20,22 +19,24 @@ app.set('port', port);
  * Create HTTP server.
  */
 
-var server = module.exports = exports =
-    https.createServer({
-        key: fs.readFileSync('/data/certs/apprtc.key'),
-        cert: fs.readFileSync('/data/certs/apprtc.crt'),
+var server;
+if (config.server.https) {
+    var https = require('https');
+    server = https.createServer({
+        key: fs.readFileSync(config.server.key),
+        cert: fs.readFileSync(config.server.cert),
+        ca: config.server.ca.map(fs.readFileSync.bind(fs)),
 
-        // This is necessary only if using the client certificate authentication.
         requestCert: false,
-
-        // This is necessary only if the client uses the self-signed certificate.
-        ca: [
-            fs.readFileSync('/data/certs/CA/cacert.pem')
-        ],
-        handshakeTimeout: 10000,
+        handshakeTimeout: config.server.handshakeTimeout || 10000,
         rejectUnauthorized: false
+    });
+} else {
+    var http = require('http');
+    server = http.createServer();
+}
 
-    }, app);
+server.addListener('request', app);
 
 /**
  * Listen on provided port, on all network interfaces.
