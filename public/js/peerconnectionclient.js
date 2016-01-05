@@ -43,14 +43,6 @@ var PeerConnectionClient = function (peerId, sendMsg, params, startTime) {
 
     this.hasRemoteSdp_ = false;
     this.messageQueue_ = [];
-    Object.defineProperty(this, "isInitiator_", {
-        get: function () {
-            throw new Error("get isInitiator_ is forbidden");
-        },
-        set: function () {
-            throw new Error("set isInitiator_ is forbidden");
-        }
-    });
     this.started_ = false;
 
     // TODO(jiayl): Replace callbacks with events.

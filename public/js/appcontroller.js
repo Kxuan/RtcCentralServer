@@ -199,7 +199,7 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     // clean up steps before page is closed.
     // Chrome apps can't use onbeforeunload.
     window.onbeforeunload = function () {
-        this.call_.hangup(false);
+        this.call_.hangup();
     }.bind(this);
 
     window.onpopstate = function (event) {
@@ -224,7 +224,7 @@ AppController.prototype.hangup_ = function () {
     this.transitionToDone_();
 
     // Call hangup with async = true.
-    this.call_.hangup(true);
+    this.call_.hangup();
 };
 
 AppController.prototype.onRemoteHangup_ = function () {

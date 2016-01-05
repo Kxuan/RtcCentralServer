@@ -65,7 +65,7 @@ Call.prototype.restart = function () {
     this.start(this.params_.previousRoomId);
 };
 
-Call.prototype.hangup = function (async) {
+Call.prototype.hangup = function () {
     this.startTime = null;
 
     if (this.localStream_) {
@@ -89,7 +89,7 @@ Call.prototype.hangup = function (async) {
     this.peerConnections = {__proto__: null};
 
     // Close signaling channel.
-    this.channel_.close(async);
+    this.channel_.close();
     this.params_.previousRoomId = this.params_.roomId;
     this.params_.roomId = null;
     this.params_.clientId = null;
