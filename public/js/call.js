@@ -16,7 +16,8 @@
 
 'use strict';
 
-var Call = function () {
+var Call = function (loadingParams) {
+    this.params_ = loadingParams;
     this.peerConnections = {__proto__: null};
     this.localStream_ = null;
 
@@ -47,6 +48,7 @@ Call.prototype.start = function (roomId) {
     this.joinRoom_(roomId).then(function (params) {
         this.params_ = params;
         this.params_.mediaConstraints = JSON.parse(params.media_constraints);
+        this.params_.peerConnectionConfig = JSON.parse(params.pc_config);
 
         this.channel_ = new SignalingChannel(params.wss_url);
         this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
