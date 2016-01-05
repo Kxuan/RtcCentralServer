@@ -20,11 +20,12 @@
 
 'use strict';
 
-var PeerConnectionClient = function (peerId, sendMsg, params, startTime) {
+var PeerConnectionClient = function (peerId, call) {
+    var params = call.params_;
+    this.call = call;
     this.peerId = peerId;
-    this.sendMsg = sendMsg;
     this.params_ = params;
-    this.startTime_ = startTime;
+    this.startTime_ = call.startTime;
 
     trace('Creating RTCPeerConnnection with:\n' +
         '  config: \'' + JSON.stringify(params.peerConnectionConfig) + '\';\n' +
@@ -88,7 +89,7 @@ PeerConnectionClient.prototype.startConnection = function () {
     this.pc_.createOffer(
         function (sdp) {
             sdp = this.adjustLocalSdpAndNotify(sdp);
-            this.sendMsg({
+            this.call.send({
                 cmd:      "offer",
                 to:       this.peerId,
                 isHelper: false,
@@ -134,7 +135,7 @@ PeerConnectionClient.prototype.doAnswer_ = function () {
     this.pc_.createAnswer(
         function (sdp) {
             sdp = this.adjustLocalSdpAndNotify(sdp);
-            this.sendMsg({
+            this.call.send({
                 cmd:     "answer",
                 accept:  true,
                 to:      this.peerId,
@@ -200,9 +201,19 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                     this.pc_.signalingState);
                 return;
             }
-            trace("isHelper:", !!message.isHelper);
-            this.setRemoteSdp_(message.content);
-            this.doAnswer_();
+
+            if (message.isHelper) {
+                console.trace("Android Helper Connected");
+                this.isHelper = true;
+                this.setRemoteSdp_(message.content);
+                this.doAnswer_();
+                this.call.onVideoHelperConnected(this);
+            } else {
+                this.isHelper = false;
+                this.addStream(this.call.localStream_);
+                this.setRemoteSdp_(message.content);
+                this.doAnswer_();
+            }
             break;
         case 'answer':
             if (this.pc_.signalingState !== 'have-local-offer') {
@@ -223,7 +234,7 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 this.onError_.bind(this, 'addIceCandidate'));
             break;
         case 'bye':
-
+            //TODO 服务器不会发送bye消息
             if (this.onremotehangup) {
                 this.onremotehangup();
             }
@@ -247,7 +258,7 @@ PeerConnectionClient.prototype.onIceCandidate_ = function (event) {
                     candidate: event.candidate.candidate
                 }
             };
-            this.sendMsg(message);
+            this.call.send(message);
             this.recordIceCandidate_('Local', event.candidate);
         }
     } else {

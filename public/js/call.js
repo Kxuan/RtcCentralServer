@@ -286,7 +286,7 @@ Call.prototype.getPeerConnection = function (peerId) {
     }
     try {
         var pc = this.peerConnections[peerId] =
-            new PeerConnectionClient(peerId, this.sendSignalingMessage_.bind(this), this.params_, this.startTime);
+            new PeerConnectionClient(peerId, this);
 
         pc.onremotehangup = this.onremotehangup;
         pc.onremotesdpset = this.onremotesdpset;
@@ -298,6 +298,7 @@ Call.prototype.getPeerConnection = function (peerId) {
         trace('Created PeerConnectionClient');
         return pc;
     } catch (e) {
+        console.error(e);
         this.onError_('Create PeerConnection exception: ' + e.message);
         alert('Cannot create RTCPeerConnection; ' +
             'WebRTC is not supported by this browser.');
@@ -348,21 +349,19 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
     var pc;
 
     switch (msg.type) {
+        //WebRTC消息交给PeerConnectionClient处理
         case 'answer':
         case 'candidate':
         case 'offer':
             pc = this.getPeerConnection(msg.from);
-            if (msg.type == 'offer') {
-                pc.addStream(this.localStream_);
-            }
-            try {
-                pc.receiveSignalingMessage(msg);
-            } catch (ex) {
-                console.error(ex);
-            }
+            pc.receiveSignalingMessage(msg);
             break;
+
+        //其他消息在Call中处理
         case 'join':
-            console.info("%d(%s) join the room", msg.id, msg.device);
+
+            console.trace("%d(%s) join the room", msg.id, msg.device);
+
             switch (msg.device) {
                 case 'chrome':
                     pc = this.getPeerConnection(msg.id);
@@ -382,26 +381,12 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
             console.info("Message:", msg);
     }
 };
+Call.prototype.onVideoHelperConnected = function (pc) {
 
-Call.prototype.sendSignalingMessage_ = function (message) {
+};
+Call.prototype.send = function (message) {
     var msgString = JSON.stringify(message);
-    //Disable GAE Message, all message will be sent by SignalChannel
     this.channel_.send(msgString);
-
-    /*    if (this.params_.isInitiator) {
-     // Initiator posts all messages to GAE. GAE will either store the messages
-     // until the other client connects, or forward the message to Collider if
-     // the other client is already connected.
-     // Must append query parameters in case we've specified alternate WSS url.
-     var path = this.roomServer_ + '/message/' + this.params_.roomId +
-     '/' + this.params_.clientId + window.location.search;
-     var xhr = new XMLHttpRequest();
-     xhr.open('POST', path, true);
-     xhr.send(msgString);
-     trace('C->GAE: ' + msgString);
-     } else {
-     this.channel_.send(msgString);
-     }*/
 };
 
 Call.prototype.onError_ = function (message) {
