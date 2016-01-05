@@ -42,7 +42,6 @@ var PeerConnectionClient = function (peerId, sendMsg, params, startTime) {
         this.onIceConnectionStateChanged_.bind(this);
 
     this.hasRemoteSdp_ = false;
-    this.messageQueue_ = [];
     this.started_ = false;
 
     // TODO(jiayl): Replace callbacks with events.
@@ -103,9 +102,6 @@ PeerConnectionClient.prototype.startConnection = function () {
     return true;
 };
 
-PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
-    this.processSignalingMessage_(message);
-};
 
 PeerConnectionClient.prototype.close = function () {
     if (!this.pc_) {
@@ -196,7 +192,7 @@ PeerConnectionClient.prototype.onSetRemoteDescriptionSuccess_ = function () {
     }
 };
 
-PeerConnectionClient.prototype.processSignalingMessage_ = function (message) {
+PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
     switch (message.type) {
         case 'offer':
             if (this.pc_.signalingState !== 'stable') {
@@ -236,27 +232,6 @@ PeerConnectionClient.prototype.processSignalingMessage_ = function (message) {
             trace('WARNING: unexpected message: ' + JSON.stringify(message));
 
     }
-};
-
-// When we receive messages from GAE registration and from the WSS connection,
-// we add them to a queue and drain it if conditions are right.
-PeerConnectionClient.prototype.drainMessageQueue_ = function () {
-    // It's possible that we finish registering and receiving messages from WSS
-    // before our peer connection is created or started. We need to wait for the
-    // peer connection to be created and started before processing messages.
-    //
-    // Also, the order of messages is in general not the same as the POST order
-    // from the other client because the POSTs are async and the server may handle
-    // some requests faster than others. We need to process offer before
-    // candidates so we wait for the offer to arrive first if we're answering.
-    // Offers are added to the front of the queue.
-    if (!this.pc_ || !this.started_ || !this.hasRemoteSdp_) {
-        return;
-    }
-    for (var i = 0, len = this.messageQueue_.length; i < len; i++) {
-        this.processSignalingMessage_(this.messageQueue_[i]);
-    }
-    this.messageQueue_ = [];
 };
 
 PeerConnectionClient.prototype.onIceCandidate_ = function (event) {
