@@ -331,14 +331,7 @@ Call.prototype.joinRoom_ = function (roomId) {
                 reject(Error('Error parsing response JSON.'));
                 return;
             }
-            if (responseObj.result !== 'SUCCESS') {
-                // TODO (chuckhays) : handle room full state by returning to room selection state.
-                // When room is full, responseObj.result === 'FULL'
-                reject(Error('Registration error: ' + responseObj.result));
-                return;
-            }
-            trace('Joined the room.');
-            resolve(responseObj.params);
+            resolve(responseObj);
         }.bind(this)).catch(function (error) {
             reject(Error('Failed to join the room: ' + error.message));
             return;

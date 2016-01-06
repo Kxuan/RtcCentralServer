@@ -12,16 +12,7 @@ var constants = {
     CEOD_KEY:            config.turn.static_key,
     WSS_HOST_PORT_PAIRS: [config.wss.server],
 
-    LOOPBACK_CLIENT_ID:        'LOOPBACK_CLIENT_ID',
     TURN_URL_TEMPLATE:         'https://%s/turn?username=%s',
-    WSS_HOST_ACTIVE_HOST_KEY:  'wss_host_active_host', //memcache key for the active collider host.
-    RESPONSE_ERROR:            'ERROR',
-    RESPONSE_UNKNOWN_ROOM:     'UNKNOWN_ROOM',
-    RESPONSE_UNKNOWN_CLIENT:   'UNKNOWN_CLIENT',
-    RESPONSE_ROOM_FULL:        'FULL',
-    RESPONSE_DUPLICATE_CLIENT: 'DUPLICATE_CLIENT',
-    RESPONSE_SUCCESS:          'SUCCESS',
-    RESPONSE_INVALID_REQUEST:  'INVALID_REQUEST'
 
 };
 
@@ -316,7 +307,6 @@ router.get('/', function (req, res, next) {
     // Parse out parameters from request.
     var params = getRoomParameters(req, null, getClientId(req, res));
     res.render("index_template", params);
-    console.log("done");
 });
 
 router.get('/turn', function (req, res, next) {
@@ -354,24 +344,9 @@ router.post('/join/:roomId', function (req, res, next) {
         return;
     }
     var clientId = getClientId(req, res);
-    var isLoopback = req.query['debug'] == 'loopback';
-
-    if (isLoopback) {
-        //Reject loopback user
-        res.send({
-            result: "DENIED"
-        });
-        return;
-    }
-
     var params = getRoomParameters(req, roomId, clientId);
     params.messages = [];
-    //TODO(tkchin): Clean up response format. For simplicity put everything in
-    //params for now.
-    res.send({
-        result: 'SUCCESS',
-        params: params
-    });
+    res.send( params);
 });
 
 //Room Page for Desktop Browser
