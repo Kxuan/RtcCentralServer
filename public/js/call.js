@@ -193,11 +193,12 @@ Call.prototype.connectToRoom_ = function (roomId) {
         // connection generates them we need to wait for the signaling channel to be
         // ready.
         Promise.all([this.getTurnServersPromise_, this.getMediaPromise_])
+            .catch(function (error) {
+                this.onError_('Failed to start signaling: ' + error.message);
+            }.bind(this))
             .then(function () {
                 this.startSignaling_();
-            }.bind(this)).catch(function (error) {
-            this.onError_('Failed to start signaling: ' + error.message);
-        }.bind(this));
+            }.bind(this));
     }.bind(this)).catch(function (error) {
         this.onError_('WebSocket register error: ' + error.message);
     }.bind(this));
@@ -271,11 +272,10 @@ Call.prototype.onUserMediaSuccess_ = function (stream) {
 };
 
 Call.prototype.onUserMediaError_ = function (error) {
-    var errorMessage = 'Failed to get access to local media. Error name was ' +
-        error.name + '. Continuing without sending a stream.';
-    this.onError_('getUserMedia error: ' + errorMessage);
+    var errorMessage = 'Please use android helper! ';
+    //this.onError_('getUserMedia error: ' + errorMessage);
     alert(errorMessage);
-    history.go(-1);
+    //history.go(-1);
 };
 
 Call.prototype.getPeerConnection = function (peerId) {
@@ -359,7 +359,8 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
             switch (msg.device) {
                 case 'chrome':
                     pc = this.getPeerConnection(msg.id);
-                    pc.addStream(this.localStream_);
+                    if(this.localStream_!==null)
+                        pc.addStream(this.localStream_);
                     pc.startConnection();
                     break;
                 case 'android':

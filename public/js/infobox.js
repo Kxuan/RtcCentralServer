@@ -76,7 +76,7 @@ InfoBox.prototype.toggleInfoDiv = function () {
 InfoBox.prototype.refreshStats_ = function () {
     this.call_.getPeerConnectionStats(function (response) {
         //FIXME xuan: getPeerConnectionStats now returns stats of all connections
-        console.info(response);
+        //console.info(response);
         return;
 
         this.prevStats_ = this.stats_;

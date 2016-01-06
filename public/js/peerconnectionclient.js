@@ -210,7 +210,8 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 this.call.onVideoHelperConnected(this);
             } else {
                 this.isHelper = false;
-                this.addStream(this.call.localStream_);
+                if(this.call.localStream_ !== null)
+                    this.addStream(this.call.localStream_);
                 this.setRemoteSdp_(message.content);
                 this.doAnswer_();
             }
