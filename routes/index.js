@@ -7,14 +7,11 @@ var express = require('express');
 var router = express.Router();
 
 var constants = {
-    ROOM_SERVER_HOST:    'apprtc.ixuan.org:3000',
-    TURN_SERVER:         [
-        'ixuan.org:3478',
-        'ixuan.org:3479'
-    ],
-    WSS_HOST_PORT_PAIRS: ['apprtc.ixuan.org:8089'],
+    ROOM_SERVER_HOST:    config.server.origin,
+    TURN_SERVER:         config.turn.servers,
+    CEOD_KEY:            config.turn.static_key,
+    WSS_HOST_PORT_PAIRS: [config.wss.server],
 
-    CEOD_KEY:                  '4080218913',
     LOOPBACK_CLIENT_ID:        'LOOPBACK_CLIENT_ID',
     TURN_URL_TEMPLATE:         'https://%s/turn?username=%s',
     WSS_HOST_ACTIVE_HOST_KEY:  'wss_host_active_host', //memcache key for the active collider host.
