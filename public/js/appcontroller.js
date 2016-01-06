@@ -51,6 +51,8 @@ var UI_CONSTANTS = {
 
 // The controller that connects the Call with the UI.
 var AppController = function (loadingParams) {
+    this.loadingParams_ = loadingParams;
+    this.loadUrlParams_();
     trace('Initializing; server= ' + loadingParams.roomServer + '.');
     trace('Initializing; room=' + loadingParams.roomId + '.');
 
@@ -81,8 +83,6 @@ var AppController = function (loadingParams) {
     this.fullscreenIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.fullscreenSvg);
 
-    this.loadingParams_ = loadingParams;
-    this.loadUrlParams_();
 
     var paramsPromise = Promise.resolve({});
     if (this.loadingParams_.paramsFunction) {
@@ -472,7 +472,12 @@ AppController.prototype.showIcons_ = function () {
 };
 
 AppController.prototype.loadUrlParams_ = function () {
-    /* jshint ignore:start */
+    //通过URL解析进入的房间号
+    var mRoom = location.pathname.match(/^\/r\/(\d+)/);
+    if (mRoom !== null) {
+        this.loadingParams_.roomId = mRoom[1];
+        this.loadingParams_.roomLink = location.href;
+    }
     // Suppressing jshint warns about using urlParams['KEY'] instead of
     // urlParams.KEY, since we'd like to use string literals to avoid the Closure
     // compiler renaming the properties.

@@ -230,6 +230,7 @@ Call.prototype.maybeGetMedia_ = function () {
 
 // Asynchronously request a TURN server if needed.
 Call.prototype.maybeGetTurnServers_ = function () {
+
     var shouldRequestTurnServers =
             (this.params_.turnRequestUrl && this.params_.turnRequestUrl.length > 0);
 
