@@ -1,5 +1,6 @@
 var util = require('util');
 var querystring = require('querystring');
+var path = require('path');
 var https = require('https');
 var http = require('http');
 var crypto = require('crypto');
@@ -12,7 +13,7 @@ var constants = {
     CEOD_KEY:            config.turn.static_key,
     WSS_HOST_PORT_PAIRS: [config.wss.server],
 
-    TURN_URL_TEMPLATE:         'https://%s/turn?username=%s',
+    TURN_URL_TEMPLATE: 'https://%s/turn?username=%s',
 
 };
 
@@ -346,17 +347,13 @@ router.post('/join/:roomId', function (req, res, next) {
     var clientId = getClientId(req, res);
     var params = getRoomParameters(req, roomId, clientId);
     params.messages = [];
-    res.send( params);
+    res.send(params);
 });
 
 //Room Page for Desktop Browser
 router.get('/r/:roomId', function (req, res, next) {
-    var roomId = req.params.roomId;
-    // Parse out room parameters from request.
-    var params = getRoomParameters(req, roomId, getClientId(req, res));
-    // room_id/room_link will be included in the returned parameters
-    // so the client will launch the requested room.
-    res.render('index_template', params);
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+    //res.render('index_template', params);
 });
 
 module.exports = router;
