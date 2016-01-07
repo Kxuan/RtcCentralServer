@@ -49,6 +49,7 @@ Call.prototype.start = function (roomId) {
         this.params_ = params;
         this.params_.mediaConstraints = JSON.parse(params.media_constraints);
         this.params_.peerConnectionConfig = JSON.parse(params.pc_config);
+        this.params_.peerConnectionConstraints = JSON.parse(params.pc_constraints);
 
         this.channel_ = new SignalingChannel(params.wss_url);
         this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
@@ -77,7 +78,7 @@ Call.prototype.hangup = function () {
             this.localStream_.removeTrack(track);
         }
         this.localStream_ = null;
-            console.trace("hungup localstream is null.");
+        console.trace("hungup localstream is null.");
     }
 
     if (!this.params_.roomId) {
@@ -232,42 +233,34 @@ Call.prototype.maybeGetMedia_ = function () {
 
 // Asynchronously request a TURN server if needed.
 Call.prototype.maybeGetTurnServers_ = function () {
+    var requestUrl = this.params_.turn_url;
+    if (!requestUrl)
+        return Promise.resolve();
 
-    var shouldRequestTurnServers =
-            (this.params_.turnRequestUrl && this.params_.turnRequestUrl.length > 0);
-
-    var turnPromise = null;
-    if (shouldRequestTurnServers) {
-        var requestUrl = this.params_.turnRequestUrl;
-        turnPromise =
-            requestTurnServers(requestUrl, this.params_.turnTransports).then(
-                function (turnServers) {
-                    var iceServers = this.params_.peerConnectionConfig.iceServers;
-                    this.params_.peerConnectionConfig.iceServers =
-                        iceServers.concat(turnServers);
-                }.bind(this)).catch(function (error) {
-                if (this.onstatusmessage) {
-                    // Error retrieving TURN servers.
-                    var subject =
-                            encodeURIComponent('AppRTC demo TURN server not working');
-                    this.onstatusmessage(
-                        'No TURN server; unlikely that media will traverse networks. ' +
-                        'If this persists please ' +
-                        '<a href="mailto:discuss-webrtc@googlegroups.com?' +
-                        'subject=' + subject + '">' +
-                        'report it to discuss-webrtc@googlegroups.com</a>.');
-                }
-                trace(error.message);
-            }.bind(this));
-    } else {
-        turnPromise = Promise.resolve();
-    }
-    return turnPromise;
+    return requestTurnServers(requestUrl, "udp").then(
+        function (turnServers) {
+            var iceServers = this.params_.peerConnectionConfig.iceServers;
+            this.params_.peerConnectionConfig.iceServers =
+                iceServers.concat(turnServers);
+        }.bind(this)).catch(function (error) {
+        if (this.onstatusmessage) {
+            // Error retrieving TURN servers.
+            var subject =
+                    encodeURIComponent('AppRTC demo TURN server not working');
+            this.onstatusmessage(
+                'No TURN server; unlikely that media will traverse networks. ' +
+                'If this persists please ' +
+                '<a href="mailto:discuss-webrtc@googlegroups.com?' +
+                'subject=' + subject + '">' +
+                'report it to discuss-webrtc@googlegroups.com</a>.');
+        }
+        trace(error.message);
+    }.bind(this));
 };
 
 Call.prototype.onUserMediaSuccess_ = function (stream) {
     this.localStream_ = stream;
-    if(stream === null)
+    if (stream === null)
         console.trace("onUserMediaSuccess stream is null.");
     if (this.onlocalstreamadded) {
         this.onlocalstreamadded(stream);
@@ -388,8 +381,9 @@ Call.prototype.send = function (message) {
 };
 Call.prototype.onRemoteStreamAdded = function (pc, stream) {
     if (pc.isHelper) {
-        this.localStream_=stream;
-        this.onlocalstreamadded(stream);
+        var newStream = new webkitMediaStream([stream.getAudioTracks(),stream.getVideoTracks()]);
+        this.localStream_ = newStream;
+        this.onlocalstreamadded(newStream);
     } else {
         this.onremotestreamadded(stream);
     }

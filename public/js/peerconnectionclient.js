@@ -248,6 +248,7 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
 
 PeerConnectionClient.prototype.onIceCandidate_ = function (event) {
     if (event.candidate) {
+
         // Eat undesired candidates.
         if (this.filterIceCandidate_(event.candidate)) {
             var message = {
