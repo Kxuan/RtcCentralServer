@@ -210,7 +210,7 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 this.call.onVideoHelperConnected(this);
             } else {
                 this.isHelper = false;
-                if(this.call.localStream_ !== null)
+                if (this.call.localStream_ !== null)
                     this.addStream(this.call.localStream_);
                 this.setRemoteSdp_(message.content);
                 this.doAnswer_();
@@ -320,7 +320,7 @@ PeerConnectionClient.prototype.recordIceCandidate_ =
 
 PeerConnectionClient.prototype.onRemoteStreamAdded_ = function (event) {
     if (this.onremotestreamadded) {
-        this.onremotestreamadded(event.stream);
+        this.onremotestreamadded(this, event.stream);
     }
 };
 

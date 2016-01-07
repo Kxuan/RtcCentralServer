@@ -77,6 +77,7 @@ Call.prototype.hangup = function () {
             this.localStream_.removeTrack(track);
         }
         this.localStream_ = null;
+            console.trace("hungup localstream is null.");
     }
 
     if (!this.params_.roomId) {
@@ -266,6 +267,8 @@ Call.prototype.maybeGetTurnServers_ = function () {
 
 Call.prototype.onUserMediaSuccess_ = function (stream) {
     this.localStream_ = stream;
+    if(stream === null)
+        console.trace("onUserMediaSuccess stream is null.");
     if (this.onlocalstreamadded) {
         this.onlocalstreamadded(stream);
     }
@@ -291,7 +294,7 @@ Call.prototype.getPeerConnection = function (peerId) {
 
         pc.onremotehangup = this.onremotehangup;
         pc.onremotesdpset = this.onremotesdpset;
-        pc.onremotestreamadded = this.onremotestreamadded;
+        pc.onremotestreamadded = this.onRemoteStreamAdded.bind(this);
         pc.onsignalingstatechange = this.onsignalingstatechange;
         pc.oniceconnectionstatechange = this.oniceconnectionstatechange;
         pc.onnewicecandidate = this.onnewicecandidate;
@@ -359,7 +362,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
             switch (msg.device) {
                 case 'chrome':
                     pc = this.getPeerConnection(msg.id);
-                    if(this.localStream_!==null)
+                    if (this.localStream_ !== null)
                         pc.addStream(this.localStream_);
                     pc.startConnection();
                     break;
@@ -383,7 +386,14 @@ Call.prototype.send = function (message) {
     var msgString = JSON.stringify(message);
     this.channel_.send(msgString);
 };
-
+Call.prototype.onRemoteStreamAdded = function (pc, stream) {
+    if (pc.isHelper) {
+        this.localStream_=stream;
+        this.onlocalstreamadded(stream);
+    } else {
+        this.onremotestreamadded(stream);
+    }
+};
 Call.prototype.onError_ = function (message) {
     if (this.onerror) {
         this.onerror(message);
