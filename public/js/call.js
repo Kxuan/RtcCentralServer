@@ -222,7 +222,7 @@ Call.prototype.maybeGetMedia_ = function () {
 
             this.onUserMediaSuccess_(stream);
         }.bind(this)).catch(function (error) {
-            this.onError_('Error getting user media: ' + error.message);
+            //this.onError_('Error getting user media: ' + error.message);
             this.onUserMediaError_(error);
         }.bind(this));
     } else {
@@ -270,7 +270,7 @@ Call.prototype.onUserMediaSuccess_ = function (stream) {
 Call.prototype.onUserMediaError_ = function (error) {
     var errorMessage = 'Please use android helper! ';
     //this.onError_('getUserMedia error: ' + errorMessage);
-    alert(errorMessage);
+    //alert(errorMessage);
     //history.go(-1);
 };
 
@@ -381,9 +381,8 @@ Call.prototype.send = function (message) {
 };
 Call.prototype.onRemoteStreamAdded = function (pc, stream) {
     if (pc.isHelper) {
-        var newStream = new webkitMediaStream([stream.getAudioTracks(),stream.getVideoTracks()]);
-        this.localStream_ = newStream;
-        this.onlocalstreamadded(newStream);
+        this.localStream_ = stream;
+        this.onlocalstreamadded(stream);
     } else {
         this.onremotestreamadded(stream);
     }
