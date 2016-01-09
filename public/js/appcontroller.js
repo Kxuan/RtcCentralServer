@@ -47,6 +47,8 @@ var UI_CONSTANTS = {
     sharingDiv:                '#sharing-div',
     statusDiv:                 '#status-div',
     videosDiv:                 '#videos',
+    QRbutton:                  '#QRcode',
+    QRdiv:                     '#objDiv',
 };
 
 // The controller that connects the Call with the UI.
@@ -70,11 +72,15 @@ var AppController = function (loadingParams) {
     this.newRoomLink_ = $(UI_CONSTANTS.newRoomLink);
     this.rejoinButton_ = $(UI_CONSTANTS.rejoinButton);
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
+    this.QRbutton_ = $(UI_CONSTANTS.QRbutton);
+    this.QRdiv_ = $(UI_CONSTANTS.QRdiv);
 
     this.newRoomButton_.addEventListener('click',
         this.onNewRoomClick_.bind(this), false);
     this.rejoinButton_.addEventListener('click',
         this.onRejoinClick_.bind(this), false);
+    this.QRbutton_.addEventListener('click',
+        this.onQRcodeClick_.bind(this),false);
 
     this.muteAudioIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.muteAudioSvg);
@@ -119,6 +125,7 @@ var AppController = function (loadingParams) {
             }
             var confirmJoinDiv = $(UI_CONSTANTS.confirmJoinDiv);
             this.show_(confirmJoinDiv);
+            //this.hide_(this.QRbutton_);;
 
             $(UI_CONSTANTS.confirmJoinButton).onclick = function () {
                 this.hide_(confirmJoinDiv);
@@ -127,6 +134,10 @@ var AppController = function (loadingParams) {
                 var recentlyUsedList = new RoomSelection.RecentlyUsedList();
                 recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
                 this.finishCallSetup_(this.loadingParams_.roomId);
+
+                this.show_(this.QRbutton_);
+                this.QRdiv_.style.display = "inline"
+
             }.bind(this);
 
             if (this.loadingParams_.bypassJoinConfirmation) {
@@ -200,6 +211,7 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     // Chrome apps can't use onbeforeunload.
     window.onbeforeunload = function () {
         this.call_.hangup();
+        this.show_(this.QRbutton_);
     }.bind(this);
 
     window.onpopstate = function (event) {
@@ -254,6 +266,7 @@ AppController.prototype.waitForRemoteVideo_ = function () {
         this.transitionToActive_();
     } else {
         this.remoteVideo_.oncanplay = this.waitForRemoteVideo_.bind(this);
+        this.show_(this.QRbutton_);
     }
 };
 
@@ -284,6 +297,8 @@ AppController.prototype.attachLocalStream_ = function () {
     this.displayStatus_('');
     this.activate_(this.localVideo_);
     this.show_(this.icons_);
+    this.hide_(this.QRbutton_);
+    this.QRdiv_.style.display = "none";
 };
 
 AppController.prototype.transitionToActive_ = function () {
@@ -360,6 +375,64 @@ AppController.prototype.onNewRoomClick_ = function () {
     this.deactivate_(this.rejoinDiv_);
     this.hide_(this.rejoinDiv_);
     this.showRoomSelection_();
+};
+
+AppController.prototype.onQRcodeClick_ = function () {
+    var intTimeStep=20;
+    var isIe=(window.ActiveXObject)?true:false;
+    var intAlphaStep=(isIe)?5:0.05;
+    var curSObj=null;
+    var curOpacity=null;
+
+    curSObj=this.QRdiv_;
+
+    setObjState();
+
+    function setObjState()
+    {
+        if (curSObj.style.display==""){curOpacity=1;setObjClose();}
+        else{
+            if(isIe)
+            {
+                curSObj.style.cssText='DISPLAY: none;Z-INDEX: 1; FILTER: alpha(opacity=0); POSITION: absolute;';
+                curSObj.filters.alpha.opacity=0;
+            }else
+            {
+                curSObj.style.opacity=0
+            }
+            curSObj.style.display='';
+            curOpacity=0;
+            setObjOpen();
+        }
+    }
+    function setObjOpen()
+    {
+        if(isIe)
+        {
+            curSObj.filters.alpha.opacity+=intAlphaStep;
+            if (curSObj.filters.alpha.opacity<100) setTimeout(setObjOpen,intTimeStep);
+        }else{
+            curOpacity+=intAlphaStep;
+            curSObj.style.opacity =curOpacity;
+            if (curOpacity<1) setTimeout(setObjOpen,intTimeStep);
+        }
+    }
+    function setObjClose()
+    {
+        if(isIe)
+        {
+            curSObj.filters.alpha.opacity-=intAlphaStep;
+            if (curSObj.filters.alpha.opacity>0) {
+                setTimeout(setObjClose(),intTimeStep);}
+            else {curSObj.style.display="none";}
+        }else{
+            curOpacity-=intAlphaStep;
+            if (curOpacity>0) {
+                curSObj.style.opacity =curOpacity;
+                setTimeout(setObjClose(),intTimeStep);}
+            else {curSObj.style.display='none';}
+        }
+    }
 };
 
 // Spacebar, or m: toggle audio mute.
