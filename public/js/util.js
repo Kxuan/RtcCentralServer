@@ -189,3 +189,12 @@ function isChromeApp() {
           typeof chrome.storage !== 'undefined' &&
           typeof chrome.storage.local !== 'undefined');
 }
+
+function myqrcode(qrCanvas,qrRoom,qrMaster) {
+    var myValue=location.origin +  '/android/?room=' + qrRoom + '&master=' + qrMaster;
+    return qr.canvas({
+        canvas: qrCanvas,
+        value: myValue
+    });
+}
+
