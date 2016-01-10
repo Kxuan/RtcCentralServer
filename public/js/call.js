@@ -248,6 +248,7 @@ Call.prototype.maybeGetTurnServers_ = function () {
         }.bind(this)).catch(function (error) {
         if (this.onstatusmessage) {
             // Error retrieving TURN servers.
+            showAlert('无法连接到转发服务器！');
             var subject =
                     encodeURIComponent('AppRTC demo TURN server not working');
             this.onstatusmessage(
@@ -272,6 +273,7 @@ Call.prototype.onUserMediaSuccess_ = function (stream) {
 };
 
 Call.prototype.onUserMediaError_ = function (error) {
+    showAlert('请使用android手机助手！');
     var errorMessage = 'Please use android helper! ';
     this.isMediaError_ = true;
 };
@@ -352,7 +354,8 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
 
         //其他消息在Call中处理
         case 'join':
-
+            var msgString=msg.id + '('+ msg.device + ')' + '加入房间';
+            showAlert(msgString);
             console.trace("%d(%s) join the room", msg.id, msg.device);
 
             switch (msg.device) {

@@ -195,7 +195,8 @@ function showQrcode(qrCanvas,qrRoom,qrMaster) {
     var myValue=location.origin +  '/android/?room=' + qrRoom + '&master=' + qrMaster;
     return qr.canvas({
         canvas: qrCanvas,
-        value: myValue
+        value: myValue,
+        size:8
     });
 }
 
