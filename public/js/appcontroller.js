@@ -185,6 +185,8 @@ AppController.prototype.showRoomSelection_ = function () {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
+        this.show_(this.QRbutton_);
+        this.QRdiv_.style.display = "inline"
 
         this.roomSelection_ = null;
         if (this.localStream_) {
