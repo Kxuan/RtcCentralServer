@@ -37,7 +37,7 @@ var Call = function (loadingParams) {
 
     this.getMediaPromise_ = null;
     this.getTurnServersPromise_ = null;
-    this.isMediaError_ = null;
+    this.isMediaError_ = true;
 };
 
 Call.prototype.requestMediaAndTurnServers_ = function () {
@@ -263,7 +263,7 @@ Call.prototype.maybeGetTurnServers_ = function () {
 
 Call.prototype.onUserMediaSuccess_ = function (stream) {
     this.localStream_ = stream;
-    this.getMediaError_ = null;
+    this.getMediaError_ = false;
     if (stream === null)
         console.trace("onUserMediaSuccess stream is null.");
     if (this.onlocalstreamadded) {
@@ -371,6 +371,12 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
                     break;
             }
             break;
+
+        //leave消息
+        case 'leave':
+            this.onremotehangup();
+            break;
+
         default:
             console.info("Message:", msg);
     }

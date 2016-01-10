@@ -125,7 +125,6 @@ var AppController = function (loadingParams) {
             }
             var confirmJoinDiv = $(UI_CONSTANTS.confirmJoinDiv);
             this.show_(confirmJoinDiv);
-            //this.hide_(this.QRbutton_);;
 
             $(UI_CONSTANTS.confirmJoinButton).onclick = function () {
                 this.hide_(confirmJoinDiv);
@@ -134,11 +133,6 @@ var AppController = function (loadingParams) {
                 var recentlyUsedList = new RoomSelection.RecentlyUsedList();
                 recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
                 this.finishCallSetup_(this.loadingParams_.roomId);
-
-                if(this.call_.isMediaError_ === true) {
-                    this.show_(this.QRbutton_);
-                    this.QRdiv_.style.display = "inline";
-                }
 
             }.bind(this);
 
@@ -187,8 +181,13 @@ AppController.prototype.showRoomSelection_ = function () {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
-        this.show_(this.QRbutton_);
-        this.QRdiv_.style.display = "inline"
+
+        if(this.call_.isMediaError_ === true) {
+            this.show_(this.QRbutton_);
+            this.QRdiv_.style.display = "inline";
+        }else{
+            this.hide_(this.QRbutton_);
+        };
 
         this.roomSelection_ = null;
         if (this.localStream_) {
@@ -215,7 +214,7 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     // Chrome apps can't use onbeforeunload.
     window.onbeforeunload = function () {
         this.call_.hangup();
-        this.show_(this.QRbutton_);
+        //this.show_(this.QRbutton_);
     }.bind(this);
 
     window.onpopstate = function (event) {
@@ -246,6 +245,7 @@ AppController.prototype.hangup_ = function () {
 AppController.prototype.onRemoteHangup_ = function () {
     this.displayStatus_('The remote side hung up.');
     this.transitionToWaiting_();
+    this.show_(this.QRbutton_);
 
     this.call_.onRemoteHangup();
 };
@@ -270,7 +270,7 @@ AppController.prototype.waitForRemoteVideo_ = function () {
         this.transitionToActive_();
     } else {
         this.remoteVideo_.oncanplay = this.waitForRemoteVideo_.bind(this);
-        this.show_(this.QRbutton_);
+        //this.show_(this.QRbutton_);
     }
 };
 
