@@ -57,7 +57,7 @@ Call.prototype.start = function (roomId) {
         this.requestMediaAndTurnServers_();
         this.connectToRoom_(roomId);
 
-        myqrcode(document.getElementById('qr-code'),this.params_.room_id,this.params_.client_id);
+        showQrcode(document.getElementById('qr-code'),this.params_.room_id,this.params_.client_id);
     }.bind(this));
 };
 

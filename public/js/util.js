@@ -190,7 +190,7 @@ function isChromeApp() {
           typeof chrome.storage.local !== 'undefined');
 }
 
-function myqrcode(qrCanvas,qrRoom,qrMaster) {
+function showQrcode(qrCanvas,qrRoom,qrMaster) {
     var myValue=location.origin +  '/android/?room=' + qrRoom + '&master=' + qrMaster;
     return qr.canvas({
         canvas: qrCanvas,
