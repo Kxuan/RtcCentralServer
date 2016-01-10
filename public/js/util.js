@@ -190,11 +190,23 @@ function isChromeApp() {
           typeof chrome.storage.local !== 'undefined');
 }
 
-function myqrcode(qrCanvas,qrRoom,qrMaster) {
+//二维码绘制
+function showQrcode(qrCanvas,qrRoom,qrMaster) {
     var myValue=location.origin +  '/android/?room=' + qrRoom + '&master=' + qrMaster;
     return qr.canvas({
         canvas: qrCanvas,
         value: myValue
     });
+}
+
+//自定义消息框，参数为需提示的消息
+function showAlert(aleString) {
+    var d = dialog({
+        content: aleString
+    });
+    d.show();
+    setTimeout(function () {
+        d.close().remove();
+    }, 2500);
 }
 
