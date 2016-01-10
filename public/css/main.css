@@ -399,6 +399,7 @@ svg:hover {
 /*////// icons CSS end /////////////////////////*/
 
 /*/////  QRcode CSS start  ////////////////////*/
+
 #QRcode {
   position: absolute;
   right: 0;
@@ -406,9 +407,13 @@ svg:hover {
 }
 
 #objDiv {
-  position: absolute;
-  right: 850px;
-  bottom: 400px
+  position:fixed;
+  left:45%;
+  top:40%;
+  text-align: center;
+  width: 150px;
+  height: 150px;
+  background-color: #4285F4;
 }
 
 /*/////  QRcode CSS end  //////////////////////*/
