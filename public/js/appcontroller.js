@@ -14,26 +14,21 @@
 
 'use strict';
 
-// TODO(jiayl): remove |remoteVideo| once the chrome browser tests are updated.
-// Do not use in the production code.
-var remoteVideo = $('#remote-video');
-
 // Keep this in sync with the HTML element id attributes. Keep it sorted.
 var UI_CONSTANTS = {
     confirmJoinButton:         '#confirm-join-button',
     confirmJoinDiv:            '#confirm-join-div',
     confirmJoinRoomSpan:       '#confirm-join-room-span',
+    fullPageVideo:             '#fullpage-video',
     fullscreenSvg:             '#fullscreen',
     hangupSvg:                 '#hangup',
     icons:                     '#icons',
     infoDiv:                   '#info-div',
     localVideo:                '#local-video',
-    miniVideo:                 '#mini-video',
     muteAudioSvg:              '#mute-audio',
     muteVideoSvg:              '#mute-video',
     newRoomButton:             '#new-room-button',
     newRoomLink:               '#new-room-link',
-    remoteVideo:               '#remote-video',
     rejoinButton:              '#rejoin-button',
     rejoinDiv:                 '#rejoin-div',
     rejoinLink:                '#rejoin-link',
@@ -58,13 +53,12 @@ var AppController = function (loadingParams) {
     trace('Initializing; server= ' + loadingParams.roomServer + '.');
     trace('Initializing; room=' + loadingParams.roomId + '.');
 
+    this.fullPageVideo = $(UI_CONSTANTS.fullPageVideo);
     this.hangupSvg_ = $(UI_CONSTANTS.hangupSvg);
     this.icons_ = $(UI_CONSTANTS.icons);
     this.localVideo_ = $(UI_CONSTANTS.localVideo);
-    this.miniVideo_ = $(UI_CONSTANTS.miniVideo);
     this.sharingDiv_ = $(UI_CONSTANTS.sharingDiv);
     this.statusDiv_ = $(UI_CONSTANTS.statusDiv);
-    this.remoteVideo_ = $(UI_CONSTANTS.remoteVideo);
     this.videosDiv_ = $(UI_CONSTANTS.videosDiv);
     this.roomLinkHref_ = $(UI_CONSTANTS.roomLinkHref);
     this.rejoinDiv_ = $(UI_CONSTANTS.rejoinDiv);
@@ -80,7 +74,7 @@ var AppController = function (loadingParams) {
     this.rejoinButton_.addEventListener('click',
         this.onRejoinClick_.bind(this), false);
     this.QRbutton_.addEventListener('click',
-        this.onQRcodeClick_.bind(this),false);
+        this.onQRcodeClick_.bind(this), false);
 
     this.muteAudioIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.muteAudioSvg);
@@ -90,68 +84,51 @@ var AppController = function (loadingParams) {
         new AppController.IconSet_(UI_CONSTANTS.fullscreenSvg);
 
 
-    var paramsPromise = Promise.resolve({});
-    if (this.loadingParams_.paramsFunction) {
-        // If we have a paramsFunction value, we need to call it
-        // and use the returned values to merge with the passed
-        // in params. In the Chrome app, this is used to initialize
-        // the app with params from the server.
-        paramsPromise = this.loadingParams_.paramsFunction();
+    this.roomLink_ = '';
+    this.roomSelection_ = null;
+    this.localStream_ = null;
+    this.remoteVideoResetTimer_ = null;
+
+    // If the params has a roomId specified, we should connect to that room
+    // immediately. If not, show the room selection UI.
+    if (this.loadingParams_.roomId) {
+        this.createCall_();
+        this.call_.maybeGetMedia_();
+        // Ask the user to confirm.
+        if (!RoomSelection.matchRandomRoomPattern(this.loadingParams_.roomId)) {
+            // Show the room name only if it does not match the random room pattern.
+            $(UI_CONSTANTS.confirmJoinRoomSpan).textContent = ' "' +
+                this.loadingParams_.roomId + '"';
+        }
+        var confirmJoinDiv = $(UI_CONSTANTS.confirmJoinDiv);
+        this.show_(confirmJoinDiv);
+        //this.hide_(this.QRbutton_);;
+
+        $(UI_CONSTANTS.confirmJoinButton).onclick = function () {
+            this.hide_(confirmJoinDiv);
+
+            // Record this room in the recently used list.
+            var recentlyUsedList = new RoomSelection.RecentlyUsedList();
+            recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
+            this.finishCallSetup_(this.loadingParams_.roomId);
+
+            this.show_(this.QRbutton_);
+            this.QRdiv_.style.display = "inline"
+
+        }.bind(this);
+
+        if (this.loadingParams_.bypassJoinConfirmation) {
+            $(UI_CONSTANTS.confirmJoinButton).onclick();
+        }
+    } else {
+        // Display the room selection UI.
+        this.showRoomSelection_();
     }
-
-    Promise.resolve(paramsPromise).then(function (newParams) {
-        // Merge newly retrieved params with loadingParams.
-        if (newParams) {
-            Object.keys(newParams).forEach(function (key) {
-                this.loadingParams_[key] = newParams[key];
-            }.bind(this));
-        }
-
-        this.roomLink_ = '';
-        this.roomSelection_ = null;
-        this.localStream_ = null;
-        this.remoteVideoResetTimer_ = null;
-
-        // If the params has a roomId specified, we should connect to that room
-        // immediately. If not, show the room selection UI.
-        if (this.loadingParams_.roomId) {
-            this.createCall_();
-            this.call_.maybeGetMedia_();
-            // Ask the user to confirm.
-            if (!RoomSelection.matchRandomRoomPattern(this.loadingParams_.roomId)) {
-                // Show the room name only if it does not match the random room pattern.
-                $(UI_CONSTANTS.confirmJoinRoomSpan).textContent = ' "' +
-                    this.loadingParams_.roomId + '"';
-            }
-            var confirmJoinDiv = $(UI_CONSTANTS.confirmJoinDiv);
-            this.show_(confirmJoinDiv);
-
-            $(UI_CONSTANTS.confirmJoinButton).onclick = function () {
-                this.hide_(confirmJoinDiv);
-
-                // Record this room in the recently used list.
-                var recentlyUsedList = new RoomSelection.RecentlyUsedList();
-                recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
-                this.finishCallSetup_(this.loadingParams_.roomId);
-
-            }.bind(this);
-
-            if (this.loadingParams_.bypassJoinConfirmation) {
-                $(UI_CONSTANTS.confirmJoinButton).onclick();
-            }
-        } else {
-            // Display the room selection UI.
-            this.showRoomSelection_();
-        }
-    }.bind(this)).catch(function (error) {
-        trace('Error initializing: ' + error.message);
-    }.bind(this));
 };
 
 AppController.prototype.createCall_ = function () {
     this.call_ = new Call(this.loadingParams_);
     this.infoBox_ = new InfoBox($(UI_CONSTANTS.infoDiv),
-        this.remoteVideo_,
         this.call_,
         'Alpha-Test');
 
@@ -181,13 +158,8 @@ AppController.prototype.showRoomSelection_ = function () {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
-
-        if(this.call_.isMediaError_ === true) {
-            this.show_(this.QRbutton_);
-            this.QRdiv_.style.display = "inline";
-        }else{
-            this.hide_(this.QRbutton_);
-        };
+        this.show_(this.QRbutton_);
+        this.QRdiv_.style.display = "inline"
 
         this.roomSelection_ = null;
         if (this.localStream_) {
@@ -214,7 +186,7 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     // Chrome apps can't use onbeforeunload.
     window.onbeforeunload = function () {
         this.call_.hangup();
-        //this.show_(this.QRbutton_);
+        this.show_(this.QRbutton_);
     }.bind(this);
 
     window.onpopstate = function (event) {
@@ -245,7 +217,6 @@ AppController.prototype.hangup_ = function () {
 AppController.prototype.onRemoteHangup_ = function () {
     this.displayStatus_('The remote side hung up.');
     this.transitionToWaiting_();
-    this.show_(this.QRbutton_);
 
     this.call_.onRemoteHangup();
 };
@@ -270,7 +241,7 @@ AppController.prototype.waitForRemoteVideo_ = function () {
         this.transitionToActive_();
     } else {
         this.remoteVideo_.oncanplay = this.waitForRemoteVideo_.bind(this);
-        //this.show_(this.QRbutton_);
+        this.show_(this.QRbutton_);
     }
 };
 
@@ -299,7 +270,6 @@ AppController.prototype.attachLocalStream_ = function () {
     attachMediaStream(this.localVideo_, this.localStream_);
 
     this.displayStatus_('');
-    this.activate_(this.localVideo_);
     this.show_(this.icons_);
     this.hide_(this.QRbutton_);
     this.QRdiv_.style.display = "none";
@@ -382,59 +352,63 @@ AppController.prototype.onNewRoomClick_ = function () {
 };
 
 AppController.prototype.onQRcodeClick_ = function () {
-    var intTimeStep=20;
-    var isIe=(window.ActiveXObject)?true:false;
-    var intAlphaStep=(isIe)?5:0.05;
-    var curSObj=null;
-    var curOpacity=null;
+    var intTimeStep = 20;
+    var isIe = (window.ActiveXObject) ? true : false;
+    var intAlphaStep = (isIe) ? 5 : 0.05;
+    var curSObj = null;
+    var curOpacity = null;
 
-    curSObj=this.QRdiv_;
+    curSObj = this.QRdiv_;
 
     setObjState();
 
-    function setObjState()
-    {
-        if (curSObj.style.display==""){curOpacity=1;setObjClose();}
-        else{
-            if(isIe)
-            {
-                curSObj.style.cssText='DISPLAY: none;Z-INDEX: 1; FILTER: alpha(opacity=0); POSITION: absolute;';
-                curSObj.filters.alpha.opacity=0;
-            }else
-            {
-                curSObj.style.opacity=0
+    function setObjState() {
+        if (curSObj.style.display == "") {
+            curOpacity = 1;
+            setObjClose();
+        }
+        else {
+            if (isIe) {
+                curSObj.style.cssText = 'DISPLAY: none;Z-INDEX: 1; FILTER: alpha(opacity=0); POSITION: absolute;';
+                curSObj.filters.alpha.opacity = 0;
+            } else {
+                curSObj.style.opacity = 0
             }
-            curSObj.style.display='';
-            curOpacity=0;
+            curSObj.style.display = '';
+            curOpacity = 0;
             setObjOpen();
         }
     }
-    function setObjOpen()
-    {
-        if(isIe)
-        {
-            curSObj.filters.alpha.opacity+=intAlphaStep;
-            if (curSObj.filters.alpha.opacity<100) setTimeout(setObjOpen,intTimeStep);
-        }else{
-            curOpacity+=intAlphaStep;
-            curSObj.style.opacity =curOpacity;
-            if (curOpacity<1) setTimeout(setObjOpen,intTimeStep);
+
+    function setObjOpen() {
+        if (isIe) {
+            curSObj.filters.alpha.opacity += intAlphaStep;
+            if (curSObj.filters.alpha.opacity < 100) setTimeout(setObjOpen, intTimeStep);
+        } else {
+            curOpacity += intAlphaStep;
+            curSObj.style.opacity = curOpacity;
+            if (curOpacity < 1) setTimeout(setObjOpen, intTimeStep);
         }
     }
-    function setObjClose()
-    {
-        if(isIe)
-        {
-            curSObj.filters.alpha.opacity-=intAlphaStep;
-            if (curSObj.filters.alpha.opacity>0) {
-                setTimeout(setObjClose(),intTimeStep);}
-            else {curSObj.style.display="none";}
-        }else{
-            curOpacity-=intAlphaStep;
-            if (curOpacity>0) {
-                curSObj.style.opacity =curOpacity;
-                setTimeout(setObjClose(),intTimeStep);}
-            else {curSObj.style.display='none';}
+
+    function setObjClose() {
+        if (isIe) {
+            curSObj.filters.alpha.opacity -= intAlphaStep;
+            if (curSObj.filters.alpha.opacity > 0) {
+                setTimeout(setObjClose(), intTimeStep);
+            }
+            else {
+                curSObj.style.display = "none";
+            }
+        } else {
+            curOpacity -= intAlphaStep;
+            if (curOpacity > 0) {
+                curSObj.style.opacity = curOpacity;
+                setTimeout(setObjClose(), intTimeStep);
+            }
+            else {
+                curSObj.style.display = 'none';
+            }
         }
     }
 };
@@ -489,7 +463,7 @@ AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {
 };
 
 AppController.prototype.displayStatus_ = function (status) {
-    if (status === '') {
+    if (!status) {
         this.deactivate_(this.statusDiv_);
     } else {
         this.activate_(this.statusDiv_);

@@ -14,9 +14,8 @@
 
 'use strict';
 
-var InfoBox = function (infoDiv, remoteVideo, call, versionInfo) {
+var InfoBox = function (infoDiv,  call, versionInfo) {
     this.infoDiv_ = infoDiv;
-    this.remoteVideo_ = remoteVideo;
     this.call_ = call;
     this.versionInfo_ = versionInfo;
 
@@ -129,8 +128,6 @@ InfoBox.prototype.updateInfoDiv = function () {
                 ' (' + remoteAddrType + ')');
         }
         contents += this.buildLine_();
-
-        contents += this.buildStatsSection_();
     }
 
     if (this.errorMessages_.length) {
@@ -144,7 +141,7 @@ InfoBox.prototype.updateInfoDiv = function () {
 
     if (this.versionInfo_) {
         contents += this.buildLine_();
-        contents += this.buildLine_('Version' + this.versionInfo_);
+        contents += this.buildLine_('Version:' + this.versionInfo_);
     }
 
     contents += '</pre>';
@@ -154,96 +151,6 @@ InfoBox.prototype.updateInfoDiv = function () {
     }
 };
 
-InfoBox.prototype.buildStatsSection_ = function () {
-    var contents = this.buildLine_('Stats');
-
-    // Obtain setup and latency this.stats_.
-    var rtt = extractStatAsInt(this.stats_, 'ssrc', 'googRtt');
-    var captureStart = extractStatAsInt(this.stats_, 'ssrc',
-        'googCaptureStartNtpTimeMs');
-    var e2eDelay = computeE2EDelay(captureStart, this.remoteVideo_.currentTime);
-    if (this.endTime_ !== null) {
-        contents += this.buildLine_('Call time',
-            InfoBox.formatInterval_(window.performance.now() - this.connectTime_));
-        contents += this.buildLine_('Setup time',
-            InfoBox.formatMsec_(this.connectTime_ - this.startTime_));
-    }
-    if (rtt !== null) {
-        contents += this.buildLine_('RTT', InfoBox.formatMsec_(rtt));
-    }
-    if (e2eDelay !== null) {
-        contents += this.buildLine_('End to end', InfoBox.formatMsec_(e2eDelay));
-    }
-
-    // Obtain resolution, framerate, and bitrate this.stats_.
-    // TODO(juberti): find a better way to tell these apart.
-    var txAudio = getStatsReport(this.stats_, 'ssrc', 'audioInputLevel');
-    var rxAudio = getStatsReport(this.stats_, 'ssrc', 'audioOutputLevel');
-    var txVideo = getStatsReport(this.stats_, 'ssrc', 'googFirsReceived');
-    var rxVideo = getStatsReport(this.stats_, 'ssrc', 'googFirsSent');
-    var txPrevAudio = getStatsReport(this.prevStats_, 'ssrc', 'audioInputLevel');
-    var rxPrevAudio = getStatsReport(this.prevStats_, 'ssrc', 'audioOutputLevel');
-    var txPrevVideo = getStatsReport(this.prevStats_, 'ssrc', 'googFirsReceived');
-    var rxPrevVideo = getStatsReport(this.prevStats_, 'ssrc', 'googFirsSent');
-    var txAudioCodec;
-    var txAudioBitrate;
-    var txAudioPacketRate;
-    var rxAudioCodec;
-    var rxAudioBitrate;
-    var rxAudioPacketRate;
-    var txVideoHeight;
-    var txVideoFps;
-    var txVideoCodec;
-    var txVideoBitrate;
-    var txVideoPacketRate;
-    var rxVideoHeight;
-    var rxVideoFps;
-    var rxVideoCodec;
-    var rxVideoBitrate;
-    var rxVideoPacketRate;
-    if (txAudio) {
-        txAudioCodec = txAudio.stat('googCodecName');
-        txAudioBitrate = computeBitrate(txAudio, txPrevAudio, 'bytesSent');
-        txAudioPacketRate = computeRate(txAudio, txPrevAudio, 'packetsSent');
-        contents += this.buildLine_('Audio Tx', txAudioCodec + ', ' +
-            InfoBox.formatBitrate_(txAudioBitrate) + ', ' +
-            InfoBox.formatPacketRate_(txAudioPacketRate));
-    }
-    if (rxAudio) {
-        rxAudioCodec = rxAudio.stat('googCodecName');
-        rxAudioBitrate = computeBitrate(rxAudio, rxPrevAudio, 'bytesReceived');
-        rxAudioPacketRate = computeRate(rxAudio, rxPrevAudio, 'packetsReceived');
-        contents += this.buildLine_('Audio Rx', rxAudioCodec + ', ' +
-            InfoBox.formatBitrate_(rxAudioBitrate) + ', ' +
-            InfoBox.formatPacketRate_(rxAudioPacketRate));
-    }
-    if (txVideo) {
-        txVideoCodec = txVideo.stat('googCodecName');
-        txVideoHeight = txVideo.stat('googFrameHeightSent');
-        txVideoFps = txVideo.stat('googFrameRateSent');
-        txVideoBitrate = computeBitrate(txVideo, txPrevVideo, 'bytesSent');
-        txVideoPacketRate = computeRate(txVideo, txPrevVideo, 'packetsSent');
-        contents += this.buildLine_('Video Tx',
-            txVideoCodec + ', ' + txVideoHeight.toString() + 'p' +
-            txVideoFps.toString() + ', ' +
-            InfoBox.formatBitrate_(txVideoBitrate) + ', ' +
-            InfoBox.formatPacketRate_(txVideoPacketRate));
-    }
-    if (rxVideo) {
-        rxVideoCodec = 'TODO';  // rxVideo.stat('googCodecName');
-        rxVideoHeight = this.remoteVideo_.videoHeight;
-        // TODO(juberti): this should ideally be obtained from the video element.
-        rxVideoFps = rxVideo.stat('googFrameRateDecoded');
-        rxVideoBitrate = computeBitrate(rxVideo, rxPrevVideo, 'bytesReceived');
-        rxVideoPacketRate = computeRate(rxVideo, rxPrevVideo, 'packetsReceived');
-        contents += this.buildLine_('Video Rx',
-            rxVideoCodec + ', ' + rxVideoHeight.toString() + 'p' +
-            rxVideoFps.toString() + ', ' +
-            InfoBox.formatBitrate_(rxVideoBitrate) + ', ' +
-            InfoBox.formatPacketRate_(rxVideoPacketRate));
-    }
-    return contents;
-};
 
 InfoBox.prototype.buildLine_ = function (label, value) {
     var columnWidth = 12;
