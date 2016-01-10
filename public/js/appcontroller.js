@@ -135,8 +135,10 @@ var AppController = function (loadingParams) {
                 recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
                 this.finishCallSetup_(this.loadingParams_.roomId);
 
-                this.show_(this.QRbutton_);
-                this.QRdiv_.style.display = "inline"
+                if(this.call_.isMediaError_ === true) {
+                    this.show_(this.QRbutton_);
+                    this.QRdiv_.style.display = "inline";
+                }
 
             }.bind(this);
 

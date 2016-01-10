@@ -37,6 +37,7 @@ var Call = function (loadingParams) {
 
     this.getMediaPromise_ = null;
     this.getTurnServersPromise_ = null;
+    this.isMediaError_ = null;
 };
 
 Call.prototype.requestMediaAndTurnServers_ = function () {
@@ -262,6 +263,7 @@ Call.prototype.maybeGetTurnServers_ = function () {
 
 Call.prototype.onUserMediaSuccess_ = function (stream) {
     this.localStream_ = stream;
+    this.getMediaError_ = null;
     if (stream === null)
         console.trace("onUserMediaSuccess stream is null.");
     if (this.onlocalstreamadded) {
@@ -271,9 +273,7 @@ Call.prototype.onUserMediaSuccess_ = function (stream) {
 
 Call.prototype.onUserMediaError_ = function (error) {
     var errorMessage = 'Please use android helper! ';
-    //this.onError_('getUserMedia error: ' + errorMessage);
-    //alert(errorMessage);
-    //history.go(-1);
+    this.isMediaError_ = true;
 };
 
 Call.prototype.getPeerConnection = function (peerId) {
