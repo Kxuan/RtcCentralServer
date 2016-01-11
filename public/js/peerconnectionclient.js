@@ -51,7 +51,6 @@ var PeerConnectionClient = function (peerId, call) {
     this.oniceconnectionstatechange = null;
     this.onnewicecandidate = null;
     this.onremotehangup = null;
-    this.onremotesdpset = null;
     this.onremotestreamadded = null;
     this.onsignalingstatechange = null;
 };
@@ -183,9 +182,6 @@ PeerConnectionClient.prototype.setRemoteSdp_ = function (message) {
 
 PeerConnectionClient.prototype.onSetRemoteDescriptionSuccess_ = function () {
     trace('Set remote session description success.');
-    if (this.onremotesdpset) {
-        this.onremotesdpset();
-    }
 };
 
 PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {

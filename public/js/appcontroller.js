@@ -132,7 +132,6 @@ AppController.prototype.createCall_ = function () {
 
     // TODO(jiayl): replace callbacks with events.
     this.call_.onremotehangup = this.onRemoteHangup_.bind(this);
-    this.call_.onremotesdpset = this.onRemoteSdpSet_.bind(this);
     this.call_.onremotestreamadded = this.onRemoteStreamAdded_.bind(this);
     this.call_.onlocalstreamadded = this.onLocalStreamAdded_.bind(this);
 
@@ -216,10 +215,6 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
     this.displayStatus_('The remote side hung up.');
     this.call_.onRemoteHangup();
     this.destroyRemoteVideo(pc);
-};
-
-AppController.prototype.onRemoteSdpSet_ = function (pc) {
-
 };
 
 AppController.prototype.createPeerElement = function (videoStream) {
