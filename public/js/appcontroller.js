@@ -19,7 +19,6 @@ var UI_CONSTANTS = {
     confirmJoinButton:         '#confirm-join-button',
     confirmJoinDiv:            '#confirm-join-div',
     confirmJoinRoomSpan:       '#confirm-join-room-span',
-    fullPageVideo:             '#fullpage-video',
     fullscreenSvg:             '#fullscreen',
     hangupSvg:                 '#hangup',
     icons:                     '#icons',
@@ -53,7 +52,6 @@ var AppController = function (loadingParams) {
     trace('Initializing; server= ' + loadingParams.roomServer + '.');
     trace('Initializing; room=' + loadingParams.roomId + '.');
 
-    this.fullPageVideo = $(UI_CONSTANTS.fullPageVideo);
     this.hangupSvg_ = $(UI_CONSTANTS.hangupSvg);
     this.icons_ = $(UI_CONSTANTS.icons);
     this.localVideo_ = $(UI_CONSTANTS.localVideo);
@@ -214,37 +212,63 @@ AppController.prototype.hangup_ = function () {
     this.call_.hangup();
 };
 
-AppController.prototype.onRemoteHangup_ = function () {
+AppController.prototype.onRemoteHangup_ = function (pc) {
     this.displayStatus_('The remote side hung up.');
-    this.transitionToWaiting_();
-
     this.call_.onRemoteHangup();
+    this.destroyRemoteVideo(pc);
 };
 
-AppController.prototype.onRemoteSdpSet_ = function (hasRemoteVideo) {
-    if (hasRemoteVideo) {
-        trace('Waiting for remote video.');
-        this.waitForRemoteVideo_();
+AppController.prototype.onRemoteSdpSet_ = function (pc) {
+    this.initialRemoteVideo(pc);
+};
+
+AppController.prototype.createPeerElement = function (videoStream) {
+    var el        = document.createElement('div'),
+        elWrapper = document.createElement('div'),
+        elPeerId  = document.createElement('div');
+    el.className = 'peer';
+    elWrapper.className = 'wrapper';
+    elPeerId.className = 'remotePeerName';
+    el.appendChild(elWrapper);
+
+    //初始化远端视频标签
+    var elVideo;
+    if (videoStream) {
+        elVideo = document.createElement('video');
+        elVideo.autoplay = true;
+        attachMediaStream(elVideo, videoStream);
     } else {
-        trace('No remote video stream; not waiting for media to arrive.');
-        // TODO(juberti): Make this wait for ICE connection before transitioning.
-        this.transitionToActive_();
+        elVideo = document.createElement('div');
+        elVideo.className = 'no-video';
+        elVideo.innerText = "无视频";
     }
-};
+    elWrapper.appendChild(elVideo);
 
-AppController.prototype.waitForRemoteVideo_ = function () {
-    // Wait for the actual video to start arriving before moving to the active
-    // call state.
-    if (this.remoteVideo_.readyState >= 2) {  // i.e. can play
-        trace('Remote video started; currentTime: ' +
-            this.remoteVideo_.currentTime);
-        this.transitionToActive_();
-    } else {
-        this.remoteVideo_.oncanplay = this.waitForRemoteVideo_.bind(this);
-        this.show_(this.QRbutton_);
+    //初始化远端用户ID标签
+    elWrapper.appendChild(elPeerId);
+
+    this.videosDiv_.appendChild(el);
+    return {root: el, wrapper: elWrapper, video: elVideo, peerId: elPeerId};
+};
+AppController.prototype.initialRemoteVideo = function (pc) {
+    if (pc.ui) {
+        return;
     }
+    var remoteVideo = pc.getRemoteVideo();
+    var ui = pc.ui = {
+        el: this.createPeerElement(remoteVideo)
+    };
+    ui.el.peerId.innerText = pc.peerId;
+    ui.el.peerId.title = pc.peerId;
 };
+AppController.prototype.destroyRemoteVideo = function (pc) {
+    if (!pc.ui) {
+        return;
+    }
 
+    this.videosDiv_.removeChild(pc.ui.el.root);
+    delete pc.ui;
+};
 AppController.prototype.onRemoteStreamAdded_ = function (stream) {
     this.deactivate_(this.sharingDiv_);
     trace('Remote stream added.');
@@ -273,31 +297,6 @@ AppController.prototype.attachLocalStream_ = function () {
     this.show_(this.icons_);
     this.hide_(this.QRbutton_);
     this.QRdiv_.style.display = "none";
-};
-
-AppController.prototype.transitionToActive_ = function () {
-    // Stop waiting for remote video.
-    this.remoteVideo_.oncanplay = undefined;
-    var connectTime = window.performance.now();
-    this.infoBox_.setSetupTimes(this.call_.startTime, connectTime);
-    this.infoBox_.updateInfoDiv();
-    trace('Call setup time: ' + (connectTime - this.call_.startTime).toFixed(0) +
-        'ms.');
-
-    // Prepare the remote video and PIP elements.
-    trace('reattachMediaStream: ' + this.localVideo_.src);
-    reattachMediaStream(this.miniVideo_, this.localVideo_);
-
-    // Transition opacity from 0 to 1 for the remote and mini videos.
-    this.activate_(this.remoteVideo_);
-    this.activate_(this.miniVideo_);
-    // Transition opacity from 1 to 0 for the local video.
-    this.deactivate_(this.localVideo_);
-    this.localVideo_.src = '';
-    // Rotate the div containing the videos 180 deg with a CSS transform.
-    this.activate_(this.videosDiv_);
-    this.show_(this.hangupSvg_);
-    this.displayStatus_('');
 };
 
 AppController.prototype.transitionToWaiting_ = function () {

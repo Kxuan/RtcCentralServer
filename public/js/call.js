@@ -58,7 +58,7 @@ Call.prototype.start = function (roomId) {
         this.requestMediaAndTurnServers_();
         this.connectToRoom_(roomId);
 
-        showQrcode(document.getElementById('qr-code'),this.params_.room_id,this.params_.client_id);
+        showQrcode(document.getElementById('qr-code'), this.params_.room_id, this.params_.client_id);
     }.bind(this));
 };
 
@@ -289,8 +289,8 @@ Call.prototype.getPeerConnection = function (peerId) {
         var pc = this.peerConnections[peerId] =
             new PeerConnectionClient(peerId, this);
 
-        pc.onremotehangup = this.onremotehangup;
-        pc.onremotesdpset = this.onremotesdpset;
+        pc.onremotehangup = this.onremotehangup.bind(this, pc);
+        pc.onremotesdpset = this.onremotesdpset.bind(this, pc);
         pc.onremotestreamadded = this.onRemoteStreamAdded.bind(this);
         pc.onsignalingstatechange = this.onsignalingstatechange;
         pc.oniceconnectionstatechange = this.oniceconnectionstatechange;

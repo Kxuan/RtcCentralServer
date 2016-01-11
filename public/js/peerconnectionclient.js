@@ -183,13 +183,8 @@ PeerConnectionClient.prototype.setRemoteSdp_ = function (message) {
 
 PeerConnectionClient.prototype.onSetRemoteDescriptionSuccess_ = function () {
     trace('Set remote session description success.');
-    // By now all onaddstream events for the setRemoteDescription have fired,
-    // so we can know if the peer has any remote video streams that we need
-    // to wait for. Otherwise, transition immediately to the active state.
-    var remoteStreams = this.pc_.getRemoteStreams();
     if (this.onremotesdpset) {
-        this.onremotesdpset(remoteStreams.length > 0 &&
-            remoteStreams[0].getVideoTracks().length > 0);
+        this.onremotesdpset();
     }
 };
 
@@ -329,4 +324,21 @@ PeerConnectionClient.prototype.onError_ = function (tag, error) {
     if (this.onerror) {
         this.onerror(tag + ': ' + error.toString());
     }
+};
+
+PeerConnectionClient.prototype.getRemoteStreams = function () {
+    return this.pc_.getRemoteStreams();
+};
+PeerConnectionClient.prototype.getRemoteVideo = function () {
+    var streams = this.getRemoteStreams();
+    for (var i = 0; i < streams.length; i++) {
+        var stream = streams[i];
+        var tracks = stream.getVideoTracks();
+        if(tracks.some(function(track){
+                return track.enabled&&!track.muted
+            })){
+            return stream;
+        }
+    }
+    return null;
 };
