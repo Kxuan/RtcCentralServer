@@ -225,7 +225,7 @@ AppController.prototype.onRemoteSdpSet_ = function (pc) {
 AppController.prototype.createPeerElement = function (videoStream) {
     var el        = document.createElement('div'),
         elWrapper = document.createElement('div'),
-        elPeerId  = document.createElement('div');
+        elPeerId  = document.createElement('a');
     el.className = 'peer';
     elWrapper.className = 'wrapper';
     elPeerId.className = 'remotePeerName';
@@ -272,12 +272,7 @@ AppController.prototype.destroyRemoteVideo = function (pc) {
 AppController.prototype.onRemoteStreamAdded_ = function (stream) {
     this.deactivate_(this.sharingDiv_);
     trace('Remote stream added.');
-    attachMediaStream(this.remoteVideo_, stream);
-
-    if (this.remoteVideoResetTimer_) {
-        clearTimeout(this.remoteVideoResetTimer_);
-        this.remoteVideoResetTimer_ = null;
-    }
+    //attachMediaStream(this.remoteVideo_, stream);
 };
 
 AppController.prototype.onLocalStreamAdded_ = function (stream) {
