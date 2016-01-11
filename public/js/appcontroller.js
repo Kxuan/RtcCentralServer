@@ -137,6 +137,7 @@ AppController.prototype.createCall_ = function () {
     this.call_.onremotehangup = this.onRemoteHangup_.bind(this);
     this.call_.onremotestreamadded = this.onRemoteStreamAdded_.bind(this);
     this.call_.onlocalstreamadded = this.onLocalStreamAdded_.bind(this);
+    this.call_.onremoteSdp = this.onRemoteSdp.bind(this);
 
     this.call_.onsignalingstatechange =
         this.infoBox_.updateInfoDiv.bind(this.infoBox_);
@@ -214,6 +215,9 @@ AppController.prototype.hangup_ = function () {
     this.call_.hangup();
 };
 
+AppController.prototype.onRemoteSdp = function (pc) {
+    this.initialRemoteVideo(pc);
+};
 AppController.prototype.onRemoteHangup_ = function (pc) {
     this.displayStatus_('The remote side hung up.');
     this.call_.onRemoteHangup();
@@ -241,6 +245,9 @@ AppController.prototype.updateLayout = function () {
         this.setVideoMini(this.localVideo_, this.localVideoWrapper);
     }
 
+    var countPlayableVideo = 0;
+    //遍历所有远程视频标签，
+    // 该全屏的全屏，不该全屏的缩小掉
     this.allRemoteElements.forEach(function (ui) {
         var el = ui.el;
         if (ui === this.currentFullPageUI) {
@@ -249,19 +256,34 @@ AppController.prototype.updateLayout = function () {
             this.setVideoMini(el.video, el.wrapper);
         }
 
+        if (ui.el.video.readyState > 2) {
+            countPlayableVideo++;
+        }
     }.bind(this));
 
-    //如果有多个远程视频，则显示视频导航栏
-    if (this.allRemoteElements.length > 1) {
+    //如果有不能播放的远程视频或者远程视频不止1个，则显示远程视频栏
+    if (countPlayableVideo != this.allRemoteElements.length || this.allRemoteElements.length > 1) {
         this.videosDiv_.style.display = 'block';
     } else {
         this.videosDiv_.style.display = 'none';
     }
+
+    //如果此时有远程视频源，则显示挂断按钮
     if (this.allRemoteElements.length > 0) {
         this.show_(this.hangupSvg_);
     } else {
         this.hide_(this.hangupSvg_);
     }
+
+    //如果有可显示的远程视频则显示分享
+    if (countPlayableVideo >= 1) {
+        this.deactivate_(this.sharingDiv_);
+        this.hide_(this.sharingDiv_);
+    } else {
+        this.activate_(this.sharingDiv_);
+        this.show_(this.sharingDiv_);
+    }
+
 };
 
 AppController.prototype.createPeerElement = function (videoStream) {
@@ -283,14 +305,24 @@ AppController.prototype.createPeerElement = function (videoStream) {
     elVideo.autoplay = true;
 
     if (videoStream) {
-        elBackText.innerText = "已全屏";
-        attachMediaStream(elVideo, videoStream);
+        elBackText.innerText = "等待视频源";
+        if (elVideo.readyState <= 2) {
+            var listener = function () {
+                this.updateLayout();
+                elVideo.removeEventListener('canplay', listener);
+            }.bind(this);
+            elVideo.addEventListener('canplay', listener);
+        }
         elVideo.onprogress = function (p) {
             if (this.readyState > 2) {
                 el.style.width = ((this.videoWidth / this.videoHeight) * el.clientHeight) + 'px';
+                elBackText.innerText = "已全屏";
             }
-        }
+        };
+        attachMediaStream(elVideo, videoStream);
+        el.style.cursor = 'pointer';
     } else {
+        el.style.width = '100px';
         elBackText.innerText = "无视频";
     }
 
@@ -309,12 +341,20 @@ AppController.prototype.initialRemoteVideo = function (pc) {
     }
     var remoteVideo = pc.getRemoteVideo();
     var ui = pc.ui = {
-        el: this.createPeerElement(remoteVideo)
+        el:        this.createPeerElement(remoteVideo),
+        stream:    remoteVideo,
+        __proto__: null
     };
     ui.el.peerId.innerText = pc.peerId;
     ui.el.peerId.title = pc.peerId;
 
-    ui.videoStream = remoteVideo;
+    if (remoteVideo) {
+        ui.el.root.addEventListener('click', function () {
+            this.currentFullPageUI = ui;
+            this.updateLayout();
+        }.bind(this));
+    }
+
     this.allRemoteElements.push(ui);
 
     if (this.allRemoteElements.length == 1) {
@@ -334,10 +374,7 @@ AppController.prototype.destroyRemoteVideo = function (pc) {
     delete pc.ui;
 };
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
-    this.initialRemoteVideo(pc);
-    this.deactivate_(this.sharingDiv_);
     trace('Remote stream added.');
-    //attachMediaStream(this.remoteVideo_, stream);
 };
 
 AppController.prototype.onLocalStreamAdded_ = function (stream) {

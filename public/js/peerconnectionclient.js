@@ -48,6 +48,7 @@ var PeerConnectionClient = function (peerId, call) {
     // TODO(jiayl): Replace callbacks with events.
     // Public callbacks. Keep it sorted.
     this.onerror = null;
+    this.onremoteSdp = null;
     this.oniceconnectionstatechange = null;
     this.onnewicecandidate = null;
     this.onremotehangup = null;
@@ -182,6 +183,7 @@ PeerConnectionClient.prototype.setRemoteSdp_ = function (message) {
 
 PeerConnectionClient.prototype.onSetRemoteDescriptionSuccess_ = function () {
     trace('Set remote session description success.');
+    this.onremoteSdp();
 };
 
 PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
@@ -324,9 +326,9 @@ PeerConnectionClient.prototype.getRemoteVideo = function () {
     for (var i = 0; i < streams.length; i++) {
         var stream = streams[i];
         var tracks = stream.getVideoTracks();
-        if(tracks.some(function(track){
-                return track.enabled&&!track.muted
-            })){
+        if (tracks.some(function (track) {
+                return track.enabled && !track.muted
+            })) {
             return stream;
         }
     }

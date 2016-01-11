@@ -30,6 +30,7 @@ var Call = function (loadingParams) {
     this.onlocalstreamadded = null;
     this.onnewicecandidate = null;
     this.onremotehangup = null;
+    this.onremoteSdp = null;
     this.onremotestreamadded = null;
     this.onsignalingstatechange = null;
     this.onstatusmessage = null;
@@ -289,6 +290,10 @@ Call.prototype.getPeerConnection = function (peerId) {
             new PeerConnectionClient(peerId, this);
 
         pc.onremotehangup = this.onremotehangup.bind(this, pc);
+        pc.onremoteSdp = function () {
+            if (!pc.isHelper)
+                this.onremoteSdp(pc);
+        }.bind(this);
         pc.onremotestreamadded = this.onRemoteStreamAdded.bind(this);
         pc.onsignalingstatechange = this.onsignalingstatechange;
         pc.oniceconnectionstatechange = this.oniceconnectionstatechange;
