@@ -225,12 +225,6 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 trace.bind(null, 'Remote candidate added successfully.'),
                 this.onError_.bind(this, 'addIceCandidate'));
             break;
-        case 'bye':
-            //TODO 服务器不会发送bye消息
-            if (this.onremotehangup) {
-                this.onremotehangup();
-            }
-            break;
         default:
             trace('WARNING: unexpected message: ' + JSON.stringify(message));
 

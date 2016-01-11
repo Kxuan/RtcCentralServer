@@ -377,7 +377,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         case 'leave':
             var msgLeaveStr = msg.id + '退出房间';
             showAlert(msgLeaveStr);
-            this.onremotehangup();
+            this.onremotehangup(pc);
             break;
 
         default:

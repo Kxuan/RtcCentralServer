@@ -27,10 +27,8 @@ var UI_CONSTANTS = {
     muteAudioSvg:              '#mute-audio',
     muteVideoSvg:              '#mute-video',
     newRoomButton:             '#new-room-button',
-    newRoomLink:               '#new-room-link',
     rejoinButton:              '#rejoin-button',
     rejoinDiv:                 '#rejoin-div',
-    rejoinLink:                '#rejoin-link',
     roomLinkHref:              '#room-link-href',
     roomSelectionDiv:          '#room-selection',
     roomSelectionInput:        '#room-id-input',
@@ -60,12 +58,11 @@ var AppController = function (loadingParams) {
     this.videosDiv_ = $(UI_CONSTANTS.videosDiv);
     this.roomLinkHref_ = $(UI_CONSTANTS.roomLinkHref);
     this.rejoinDiv_ = $(UI_CONSTANTS.rejoinDiv);
-    this.rejoinLink_ = $(UI_CONSTANTS.rejoinLink);
-    this.newRoomLink_ = $(UI_CONSTANTS.newRoomLink);
     this.rejoinButton_ = $(UI_CONSTANTS.rejoinButton);
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
     this.QRbutton_ = $(UI_CONSTANTS.QRbutton);
     this.QRdiv_ = $(UI_CONSTANTS.QRdiv);
+
 
     this.newRoomButton_.addEventListener('click',
         this.onNewRoomClick_.bind(this), false);
