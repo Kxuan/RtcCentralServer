@@ -392,7 +392,7 @@ AppController.prototype.onQRcodeClick_ = function () {
     setObjState();
 
     function setObjState() {
-        if (curSObj.style.display == "") {
+        if (curSObj.style.display == "inline") {
             curOpacity = 1;
             setObjClose();
         }
@@ -403,7 +403,7 @@ AppController.prototype.onQRcodeClick_ = function () {
             } else {
                 curSObj.style.opacity = 0
             }
-            curSObj.style.display = '';
+            curSObj.style.display = 'inline';
             curOpacity = 0;
             setObjOpen();
         }
