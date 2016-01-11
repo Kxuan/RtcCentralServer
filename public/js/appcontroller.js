@@ -212,6 +212,7 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
     this.displayStatus_('The remote side hung up.');
     this.call_.onRemoteHangup();
     this.destroyRemoteVideo(pc);
+    this.show_(this.QRbutton_);
 };
 
 AppController.prototype.createPeerElement = function (videoStream) {
