@@ -114,7 +114,29 @@ label {
     margin: 0 10px 0 0;
 }
 
-video.fullpage {
+#local-video-wrapper {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    max-height: 17%;
+    max-width: 17%;
+    z-index: 100;
+}
+
+video {
+    width: 100%;
+}
+
+#videos {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    height: 200px;
+    background: rgba(0, 0, 0, 0.6);
+    text-align: right;
+}
+
+#fullpage-wrapper {
     position: fixed;
     left: 0;
     top: 0;
@@ -123,7 +145,11 @@ video.fullpage {
     max-height: 100%;
     max-width: 100%;
     z-index: -1;
+}
 
+#fullpage-wrapper video {
+    height: 100%;
+    width: 100%;
     object-fit: cover; /* no letterboxing */
     transition: opacity 1s;
     -moz-transform: scale(-1, 1);
@@ -134,30 +160,42 @@ video.fullpage {
 }
 
 .peer {
-    max-height: 17%;
-    max-width: 17%;
-    position: absolute;
-    border: 1px solid gray;
     z-index: 100;
-}
-
-.peer .wrapper {
+    height: 150px;
     position: relative;
+    display: inline-block;
+    border: 2px solid white;
 }
 
-.peer video {
-    max-width: 100%;
-    max-height: 100%;
+.peer > * {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
 }
 
-.peer .no-video {
-    width: 100px;
-    height: 70px;
-    background: black;
+.peer > .background {
+    z-index: 1;
+    text-align: center;
+}
+
+
+.peer > .wrapper {
+    z-index: 2;
+}
+
+.peer > .control-box {
+    z-index: 3;
+}
+
+.peer > .background > .background-text {
     color: white;
+    vertical-align: middle;
+    font-size: 12px;
+    line-height: 150px;
 }
-
-.peer .remotePeerName {
+.peer .peerName {
     background: rgba(0, 0, 0, 0.6);
     color: white;
     font-size: 12pt;
@@ -170,6 +208,7 @@ video.fullpage {
 }
 
 video.mini {
+    z-index: 100;
 }
 
 #remote-video {
@@ -296,6 +335,8 @@ div#room-selection {
     margin: 3em auto 0 auto;
     width: 25em;
     padding: 1em 1.5em 1.3em 1.5em;
+    z-index: 4;
+    position: relative;
 }
 
 p {

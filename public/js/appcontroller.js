@@ -20,10 +20,12 @@ var UI_CONSTANTS = {
     confirmJoinDiv:            '#confirm-join-div',
     confirmJoinRoomSpan:       '#confirm-join-room-span',
     fullscreenSvg:             '#fullscreen',
+    fullpageWrapper:           '#fullpage-wrapper',
     hangupSvg:                 '#hangup',
     icons:                     '#icons',
     infoDiv:                   '#info-div',
     localVideo:                '#local-video',
+    localVideoWrapper:         '#local-video-wrapper',
     muteAudioSvg:              '#mute-audio',
     muteVideoSvg:              '#mute-video',
     newRoomButton:             '#new-room-button',
@@ -50,9 +52,11 @@ var AppController = function (loadingParams) {
     trace('Initializing; server= ' + loadingParams.roomServer + '.');
     trace('Initializing; room=' + loadingParams.roomId + '.');
 
+    this.fullpageWrapper = $(UI_CONSTANTS.fullpageWrapper);
     this.hangupSvg_ = $(UI_CONSTANTS.hangupSvg);
     this.icons_ = $(UI_CONSTANTS.icons);
     this.localVideo_ = $(UI_CONSTANTS.localVideo);
+    this.localVideoWrapper = $(UI_CONSTANTS.localVideoWrapper);
     this.sharingDiv_ = $(UI_CONSTANTS.sharingDiv);
     this.statusDiv_ = $(UI_CONSTANTS.statusDiv);
     this.videosDiv_ = $(UI_CONSTANTS.videosDiv);
@@ -82,7 +86,9 @@ var AppController = function (loadingParams) {
     this.roomLink_ = '';
     this.roomSelection_ = null;
     this.localStream_ = null;
-    this.remoteVideoResetTimer_ = null;
+
+    this.currentFullPageUI = null;
+    this.allRemoteElements = [];
 
     // If the params has a roomId specified, we should connect to that room
     // immediately. If not, show the room selection UI.
@@ -213,32 +219,86 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
     this.call_.onRemoteHangup();
     this.destroyRemoteVideo(pc);
 };
+AppController.prototype.setVideoFullpage = function (el) {
+    if (el.parentElement != this.fullpageWrapper) {
+        el.parentElement.removeChild(el);
+        this.fullpageWrapper.appendChild(el);
+        reattachMediaStream(el, el);
+    }
+};
+AppController.prototype.setVideoMini = function (el, parent) {
+    if (el.parentElement != parent) {
+        this.fullpageWrapper.removeChild(el);
+        parent.insertBefore(el, parent.firstElementChild);
+        reattachMediaStream(el, el);
+    }
+};
+AppController.prototype.updateLayout = function () {
+    if (this.currentFullPageUI === null) {
+        this.setVideoFullpage(this.localVideo_);
+    } else {
+        this.setVideoMini(this.localVideo_, this.localVideoWrapper);
+    }
+
+    this.allRemoteElements.forEach(function (ui) {
+        var el = ui.el;
+        if (ui === this.currentFullPageUI) {
+            this.setVideoFullpage(el.video, el.wrapper);
+        } else {
+            this.setVideoMini(el.video, el.wrapper);
+        }
+
+    }.bind(this));
+
+    //如果有多个远程视频，则显示视频导航栏
+    if (this.allRemoteElements.length > 1) {
+        this.videosDiv_.style.display = 'block';
+    } else {
+        this.videosDiv_.style.display = 'none';
+    }
+    if (this.allRemoteElements.length > 0) {
+        this.show_(this.hangupSvg_);
+    } else {
+        this.hide_(this.hangupSvg_);
+    }
+};
 
 AppController.prototype.createPeerElement = function (videoStream) {
-    var el        = document.createElement('div'),
-        elWrapper = document.createElement('div'),
-        elPeerId  = document.createElement('a');
+    var el           = document.createElement('div'),
+        elBackground = document.createElement('div'),
+        elBackText   = document.createElement('div'),
+        elWrapper    = document.createElement('div'),
+        elVideo      = document.createElement('video'),
+        elControl    = document.createElement('div'),
+        elPeerId     = document.createElement('a');
     el.className = 'peer';
+    elBackground.className = 'background';
+    elBackText.className = 'background-text';
     elWrapper.className = 'wrapper';
-    elPeerId.className = 'remotePeerName';
-    el.appendChild(elWrapper);
+    elControl.className = 'control-box';
+    elPeerId.className = 'peerName';
 
-    //初始化远端视频标签
-    var elVideo;
+
+    elVideo.autoplay = true;
+
     if (videoStream) {
-        elVideo = document.createElement('video');
-        elVideo.autoplay = true;
+        elBackText.innerText = "已全屏";
         attachMediaStream(elVideo, videoStream);
+        elVideo.onprogress = function (p) {
+            if (this.readyState > 2) {
+                el.style.width = ((this.videoWidth / this.videoHeight) * el.clientHeight) + 'px';
+            }
+        }
     } else {
-        elVideo = document.createElement('div');
-        elVideo.className = 'no-video';
-        elVideo.innerText = "无视频";
+        elBackText.innerText = "无视频";
     }
+
+    elBackground.appendChild(elBackText);
     elWrapper.appendChild(elVideo);
-
-    //初始化远端用户ID标签
-    elWrapper.appendChild(elPeerId);
-
+    elControl.appendChild(elPeerId);
+    el.appendChild(elBackground);
+    el.appendChild(elWrapper);
+    el.appendChild(elControl);
     this.videosDiv_.appendChild(el);
     return {root: el, wrapper: elWrapper, video: elVideo, peerId: elPeerId};
 };
@@ -252,6 +312,14 @@ AppController.prototype.initialRemoteVideo = function (pc) {
     };
     ui.el.peerId.innerText = pc.peerId;
     ui.el.peerId.title = pc.peerId;
+
+    ui.videoStream = remoteVideo;
+    this.allRemoteElements.push(ui);
+
+    if (this.allRemoteElements.length == 1) {
+        this.currentFullPageUI = ui;
+        this.updateLayout();
+    }
 };
 AppController.prototype.destroyRemoteVideo = function (pc) {
     if (!pc.ui) {
@@ -259,6 +327,9 @@ AppController.prototype.destroyRemoteVideo = function (pc) {
     }
 
     this.videosDiv_.removeChild(pc.ui.el.root);
+    this.allRemoteElements = this.allRemoteElements.filter(function (r) {
+        return r !== pc.ui;
+    });
     delete pc.ui;
 };
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
@@ -275,6 +346,7 @@ AppController.prototype.onLocalStreamAdded_ = function (stream) {
     if (!this.roomSelection_) {
         this.attachLocalStream_();
     }
+    this.updateLayout();
 };
 
 AppController.prototype.attachLocalStream_ = function () {
@@ -287,39 +359,8 @@ AppController.prototype.attachLocalStream_ = function () {
     this.QRdiv_.style.display = "none";
 };
 
-AppController.prototype.transitionToWaiting_ = function () {
-    // Stop waiting for remote video.
-    this.remoteVideo_.oncanplay = undefined;
-
-    this.hide_(this.hangupSvg_);
-    // Rotate the div containing the videos -180 deg with a CSS transform.
-    this.deactivate_(this.videosDiv_);
-
-    if (!this.remoteVideoResetTimer_) {
-        this.remoteVideoResetTimer_ = setTimeout(function () {
-            this.remoteVideoResetTimer_ = null;
-            trace('Resetting remoteVideo src after transitioning to waiting.');
-            this.remoteVideo_.src = '';
-        }.bind(this), 800);
-    }
-
-    // Set localVideo.src now so that the local stream won't be lost if the call
-    // is restarted before the timeout.
-    this.localVideo_.src = this.miniVideo_.src;
-
-    // Transition opacity from 0 to 1 for the local video.
-    this.activate_(this.localVideo_);
-    // Transition opacity from 1 to 0 for the remote and mini videos.
-    this.deactivate_(this.remoteVideo_);
-    this.deactivate_(this.miniVideo_);
-};
-
 AppController.prototype.transitionToDone_ = function () {
-    // Stop waiting for remote video.
-    this.remoteVideo_.oncanplay = undefined;
     this.deactivate_(this.localVideo_);
-    this.deactivate_(this.remoteVideo_);
-    this.deactivate_(this.miniVideo_);
     this.hide_(this.hangupSvg_);
     this.activate_(this.rejoinDiv_);
     this.show_(this.rejoinDiv_);

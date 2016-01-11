@@ -24,7 +24,12 @@
 </head>
 <body><!--* Keep the HTML id attributes in sync with |UI_CONSTANTS| defined in
 * appcontroller.js.-->
-<video id="local-video" class="fullpage" autoplay muted></video>
+<div id="fullpage-wrapper">
+
+</div>
+<div id="local-video-wrapper">
+    <video id="local-video" autoplay muted></video>
+</div>
 <div id="videos">
 
 </div>
@@ -36,7 +41,7 @@
         <div id="room-id-input-div"><input id="room-id-input" type="text" autofocus=""><label id="room-id-input-label"
                                                                                               for="room-id-input"
                                                                                               class="error-label hidden">Room
-                name must be 1 or more characters and include only letters and numbers.</label></div>
+            name must be 1 or more characters and include only letters and numbers.</label></div>
         <div id="room-id-input-buttons">
             <button id="join-button">JOIN</button>
             <button id="random-button">RANDOM</button>
@@ -63,7 +68,7 @@
 </footer>
 <div id="icons" class="hidden">
     <svg id="mute-audio" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewbox="-10 -10 68 68"><title>
-            title</title>
+        title</title>
         <circle cx="24" cy="24" r="34"></circle>
         <title>Mute audio</title>
         <path transform="scale(0.6), translate(17,18)"
@@ -104,7 +109,9 @@
 <button id="QRcode" class="hidden">手机助手</button>
 <DIV id="objDiv" style="DISPLAY: none;">
     <li style="list-style:none">无音视频流</li>
-    <li style="list-style:none"><canvas id="qr-code"></canvas></li>
+    <li style="list-style:none">
+        <canvas id="qr-code"></canvas>
+    </li>
     <li style="list-style:none">请扫码连接手机助手</li>
 </DIV>
 
@@ -124,40 +131,40 @@
 <script src="/js/stats.js"></script>
 <script src="/js/storage.js"></script>
 <script type="text/javascript">var loadingParams = {
-        mediaConstraints:          {
-            "audio": true,
-            "video": {"mandatory": {}, "optional": [{"minWidth": "1280"}, {"minHeight": "720"}]}
-        },
-        offerConstraints:          {"mandatory": {}, "optional": []},
-        peerConnectionConfig:      {"iceServers": []},
-        peerConnectionConstraints: {"optional": []},
-        bypassJoinConfirmation:    false
-    };
+    mediaConstraints:          {
+        "audio": true,
+        "video": {"mandatory": {}, "optional": [{"minWidth": "1280"}, {"minHeight": "720"}]}
+    },
+    offerConstraints:          {"mandatory": {}, "optional": []},
+    peerConnectionConfig:      {"iceServers": []},
+    peerConnectionConstraints: {"optional": []},
+    bypassJoinConfirmation:    false
+};
 
-    var appController;
+var appController;
 
-    function initialize() {
-        // We don't want to continue if this is triggered from Chrome prerendering,
-        // since it will register the user to GAE without cleaning it up, causing
-        // the real navigation to get a "full room" error. Instead we'll initialize
-        // once the visibility state changes to non-prerender.
-        if (document.webkitVisibilityState === 'prerender') {
-            document.addEventListener('webkitvisibilitychange', onVisibilityChange);
-            return;
-        }
-        if (appController) {
-            throw new Error("Duplicate create app controller");
-        }
-        appController = new AppController(loadingParams);
+function initialize() {
+    // We don't want to continue if this is triggered from Chrome prerendering,
+    // since it will register the user to GAE without cleaning it up, causing
+    // the real navigation to get a "full room" error. Instead we'll initialize
+    // once the visibility state changes to non-prerender.
+    if (document.webkitVisibilityState === 'prerender') {
+        document.addEventListener('webkitvisibilitychange', onVisibilityChange);
+        return;
     }
-
-    function onVisibilityChange() {
-        if (document.webkitVisibilityState === 'prerender') {
-            return;
-        }
-        document.removeEventListener('webkitvisibilitychange', onVisibilityChange);
-        initialize();
+    if (appController) {
+        throw new Error("Duplicate create app controller");
     }
+    appController = new AppController(loadingParams);
+}
 
-    initialize();</script>
+function onVisibilityChange() {
+    if (document.webkitVisibilityState === 'prerender') {
+        return;
+    }
+    document.removeEventListener('webkitvisibilitychange', onVisibilityChange);
+    initialize();
+}
+
+initialize();</script>
 </body>

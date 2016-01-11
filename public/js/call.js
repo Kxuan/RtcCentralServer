@@ -376,7 +376,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         //leave消息
         case 'leave':
             showAlert(msg.id + '退出房间');
-            pc = this.getPeerConnection(msg.from);
+            pc = this.getPeerConnection(msg.id);
             this.onremotehangup(pc);
             break;
 
