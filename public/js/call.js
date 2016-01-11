@@ -354,7 +354,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
 
         //其他消息在Call中处理
         case 'join':
-            var msgString=msg.id + '('+ msg.device + ')' + '加入房间';
+            var msgString = msg.id + '(' + msg.device + ')' + '加入房间';
             showAlert(msgString);
             console.trace("%d(%s) join the room", msg.id, msg.device);
 
@@ -377,7 +377,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
 
         //leave消息
         case 'leave':
-            var msgLeaveStr=msg.id + '退出房间';
+            var msgLeaveStr = msg.id + '退出房间';
             showAlert(msgLeaveStr);
             this.onremotehangup();
             break;
@@ -398,7 +398,7 @@ Call.prototype.onRemoteStreamAdded = function (pc, stream) {
         this.localStream_ = stream;
         this.onlocalstreamadded(stream);
     } else {
-        this.onremotestreamadded(stream);
+        this.onremotestreamadded(pc, stream);
     }
 };
 Call.prototype.onError_ = function (message) {

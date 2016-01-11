@@ -219,7 +219,7 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
 };
 
 AppController.prototype.onRemoteSdpSet_ = function (pc) {
-    this.initialRemoteVideo(pc);
+
 };
 
 AppController.prototype.createPeerElement = function (videoStream) {
@@ -269,7 +269,8 @@ AppController.prototype.destroyRemoteVideo = function (pc) {
     this.videosDiv_.removeChild(pc.ui.el.root);
     delete pc.ui;
 };
-AppController.prototype.onRemoteStreamAdded_ = function (stream) {
+AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
+    this.initialRemoteVideo(pc);
     this.deactivate_(this.sharingDiv_);
     trace('Remote stream added.');
     //attachMediaStream(this.remoteVideo_, stream);
