@@ -119,7 +119,7 @@ var AppController = function (loadingParams) {
             this.finishCallSetup_(this.loadingParams_.roomId);
 
             this.show_(this.QRbutton_);
-            this.qrcodeMuteDiv_.style.display = "inline"
+            this.qrcodeMuteDiv_.style.display = "block"
 
         }.bind(this);
 
@@ -165,7 +165,7 @@ AppController.prototype.showRoomSelection_ = function () {
         this.createCall_();
         this.finishCallSetup_(roomName);
         this.show_(this.QRbutton_);
-        this.qrcodeMuteDiv_.style.display = "inline"
+        this.qrcodeMuteDiv_.style.display = "block";
 
         this.roomSelection_ = null;
         if (this.localStream_) {
@@ -293,13 +293,13 @@ AppController.prototype.updateLayout = function () {
 };
 
 AppController.prototype.createPeerElement = function (videoStream) {
-    var el = document.createElement('div'),
+    var el           = document.createElement('div'),
         elBackground = document.createElement('div'),
-        elBackText = document.createElement('div'),
-        elWrapper = document.createElement('div'),
-        elVideo = document.createElement('video'),
-        elControl = document.createElement('div'),
-        elPeerId = document.createElement('a');
+        elBackText   = document.createElement('div'),
+        elWrapper    = document.createElement('div'),
+        elVideo      = document.createElement('video'),
+        elControl    = document.createElement('div'),
+        elPeerId     = document.createElement('a');
     el.className = 'peer';
     elBackground.className = 'background';
     elBackText.className = 'background-text';
@@ -347,8 +347,8 @@ AppController.prototype.initialRemoteVideo = function (pc) {
     }
     var remoteVideo = pc.getRemoteVideo();
     var ui = pc.ui = {
-        el: this.createPeerElement(remoteVideo),
-        stream: remoteVideo,
+        el:        this.createPeerElement(remoteVideo),
+        stream:    remoteVideo,
         __proto__: null
     };
     ui.el.peerId.innerText = pc.peerId;
@@ -435,7 +435,7 @@ AppController.prototype.onQRcodeClick_ = function () {
     setObjState();
 
     function setObjState() {
-        if (curSObj.style.display == "inline") {
+        if (curSObj.style.display == "block") {
             curOpacity = 1;
             setObjClose();
         }
@@ -446,7 +446,7 @@ AppController.prototype.onQRcodeClick_ = function () {
             } else {
                 curSObj.style.opacity = 0
             }
-            curSObj.style.display = 'inline';
+            curSObj.style.display = 'block';
             curOpacity = 0;
             setObjOpen();
         }

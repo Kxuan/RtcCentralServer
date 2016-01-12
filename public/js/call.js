@@ -410,3 +410,13 @@ Call.prototype.onError_ = function (message) {
         this.onerror(message);
     }
 };
+Call.prototype.hasHelper = function () {
+    var pc;
+    for(pc in this.peerConnections) {
+        if(this.peerConnections[pc].isHelper === true) {
+            return true;
+        }
+    }
+
+    return false;
+};
