@@ -67,6 +67,18 @@
     </div>
 </footer>
 <div id="icons" class="hidden">
+    <svg id="roomQrcode" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="-100 -100 512 512">
+        <title>
+            title</title>
+        <circle cx="24" cy="24" r="34"></circle>
+        <title>Room qrcode</title>
+        <path transform="scale(0.6), translate(17,20)"
+              d="M160 32h-128v128h128v-128zM192 0v0 192h-192v-192h192zM64 64h64v64h-64zM480 32h-128v128h128v-128zM512 0v0 192h-192v-192h192zM384 64h64v64h-64zM160 352h-128v128h128v-128zM192 320v0 192h-192v-192h192zM64 384h64v64h-64zM224 0h32v32h-32zM256 32h32v32h-32zM224 64h32v32h-32zM256 96h32v32h-32zM224 128h32v32h-32zM256 160h32v32h-32zM224 192h32v32h-32zM224 256h32v32h-32zM256 288h32v32h-32zM224 320h32v32h-32zM256 352h32v32h-32zM224 384h32v32h-32zM256 416h32v32h-32zM224 448h32v32h-32zM256 480h32v32h-32zM480 256h32v32h-32zM32 256h32v32h-32zM64 224h32v32h-32zM0 224h32v32h-32zM128 224h32v32h-32zM160 256h32v32h-32zM192 224h32v32h-32zM288 256h32v32h-32zM320 224h32v32h-32zM352 256h32v32h-32zM384 224h32v32h-32zM416 256h32v32h-32zM448 224h32v32h-32zM480 320h32v32h-32zM288 320h32v32h-32zM320 288h32v32h-32zM352 320h32v32h-32zM416 320h32v32h-32zM448 288h32v32h-32zM480 384h32v32h-32zM288 384h32v32h-32zM320 352h32v32h-32zM384 352h32v32h-32zM416 384h32v32h-32zM448 352h32v32h-32zM480 448h32v32h-32zM320 416h32v32h-32zM352 448h32v32h-32zM384 416h32v32h-32zM416 448h32v32h-32zM320 480h32v32h-32zM384 480h32v32h-32zM448 480h32v32h-32z"
+              fill="white" class="on"></path>
+        <path transform="scale(0.6), translate(17,20)"
+              d="M160 32h-128v128h128v-128zM192 0v0 192h-192v-192h192zM64 64h64v64h-64zM480 32h-128v128h128v-128zM512 0v0 192h-192v-192h192zM384 64h64v64h-64zM160 352h-128v128h128v-128zM192 320v0 192h-192v-192h192zM64 384h64v64h-64zM224 0h32v32h-32zM256 32h32v32h-32zM224 64h32v32h-32zM256 96h32v32h-32zM224 128h32v32h-32zM256 160h32v32h-32zM224 192h32v32h-32zM224 256h32v32h-32zM256 288h32v32h-32zM224 320h32v32h-32zM256 352h32v32h-32zM224 384h32v32h-32zM256 416h32v32h-32zM224 448h32v32h-32zM256 480h32v32h-32zM480 256h32v32h-32zM32 256h32v32h-32zM64 224h32v32h-32zM0 224h32v32h-32zM128 224h32v32h-32zM160 256h32v32h-32zM192 224h32v32h-32zM288 256h32v32h-32zM320 224h32v32h-32zM352 256h32v32h-32zM384 224h32v32h-32zM416 256h32v32h-32zM448 224h32v32h-32zM480 320h32v32h-32zM288 320h32v32h-32zM320 288h32v32h-32zM352 320h32v32h-32zM416 320h32v32h-32zM448 288h32v32h-32zM480 384h32v32h-32zM288 384h32v32h-32zM320 352h32v32h-32zM384 352h32v32h-32zM416 384h32v32h-32zM448 352h32v32h-32zM480 448h32v32h-32zM320 416h32v32h-32zM352 448h32v32h-32zM384 416h32v32h-32zM416 448h32v32h-32zM320 480h32v32h-32zM384 480h32v32h-32zM448 480h32v32h-32z"
+              fill="white" class="off"></path>
+    </svg>
     <svg id="mute-audio" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewbox="-10 -10 68 68"><title>
         title</title>
         <circle cx="24" cy="24" r="34"></circle>
@@ -107,12 +119,23 @@
     </svg>
 </div>
 <button id="QRcode" class="hidden">手机助手</button>
-<DIV id="objDiv" style="DISPLAY: none;">
-    <li style="list-style:none">无音视频流</li>
-    <li style="list-style:none">
-        <canvas id="qr-code"></canvas>
+<DIV id="qrcodeMuteDiv" style="DISPLAY: none;">
+    <ul>
+    <li>无音视频流</li>
+    <li>
+        <canvas id="qrcodeMuteCanvas"></canvas>
     </li>
-    <li style="list-style:none">请扫码连接手机助手</li>
+    <li>使用手机客户端采集视频</li>
+    </ul>
+</DIV>
+
+<DIV id="qrcodeShareDiv" class="hidden">
+    <ul>
+        <li>
+            <canvas id="qrcodeShareCanvas"></canvas>
+        </li>
+        <li>邀请手机客户端进入房间</li>
+    </ul>
 </DIV>
 
 <script src="/js/jquery-1.10.2.min.js"></script>
@@ -131,14 +154,14 @@
 <script src="/js/stats.js"></script>
 <script src="/js/storage.js"></script>
 <script type="text/javascript">var loadingParams = {
-    mediaConstraints:          {
+    mediaConstraints: {
         "audio": true,
         "video": {"mandatory": {}, "optional": [{"minWidth": "1280"}, {"minHeight": "720"}]}
     },
-    offerConstraints:          {"mandatory": {}, "optional": []},
-    peerConnectionConfig:      {"iceServers": []},
+    offerConstraints: {"mandatory": {}, "optional": []},
+    peerConnectionConfig: {"iceServers": []},
     peerConnectionConstraints: {"optional": []},
-    bypassJoinConfirmation:    false
+    bypassJoinConfirmation: false
 };
 
 var appController;

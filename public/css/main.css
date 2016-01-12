@@ -34,6 +34,13 @@ body {
     color: #fff;
 }
 
+ul {
+    list-style: none;
+
+    padding: 0;
+    margin: 0;
+}
+
 #remote-canvas {
     display: none;
     height: 100%;
@@ -180,7 +187,6 @@ video {
     text-align: center;
 }
 
-
 .peer > .wrapper {
     z-index: 2;
 }
@@ -195,6 +201,7 @@ video {
     font-size: 12px;
     line-height: 150px;
 }
+
 .peer .peerName {
     background: rgba(0, 0, 0, 0.6);
     color: white;
@@ -402,6 +409,19 @@ svg:hover {
     transform: translateX(0);
 }
 
+#roomQrcode {
+    transition: 20ms;
+}
+
+#roomQrcode:hover,
+#roomQrcode.on {
+    background: #008B00;
+}
+
+#roomQrcode:hover circle {
+    fill: #008B00;
+}
+
 #mute-audio {
     transition: 40ms;
 }
@@ -475,7 +495,7 @@ svg:hover {
     bottom: 62px
 }
 
-#objDiv {
+#qrcodeMuteDiv {
     position: fixed;
     left: 40%;
     top: 35%;
@@ -486,3 +506,13 @@ svg:hover {
 }
 
 /*/////  QRcode CSS end  //////////////////////*/
+#qrcodeShareDiv {
+    position: fixed;
+    left: calc(7vw + 48px);
+    top: 40%;
+    text-align: center;
+    width: 250px;
+    height: 250px;
+    background-color: #4285F4;
+    padding-top: 30px;
+}

@@ -190,7 +190,8 @@ function isChromeApp() {
           typeof chrome.storage.local !== 'undefined');
 }
 
-//二维码绘制
+//连接之后无摄像头和麦克风的二维码
+//android版手机助手的二维码绘制
 function showQrcode(qrCanvas,qrRoom,qrMaster) {
     var myValue=location.origin +  '/android/?room=' + qrRoom + '&master=' + qrMaster;
     return qr.canvas({
@@ -211,3 +212,12 @@ function showAlert(aleString) {
     }, 2500);
 }
 
+//未连入新房间的二维码
+function showJoinQrcode(qrCanvas){
+    var joinValue=location.origin + location.pathname;
+    return qr.canvas({
+        canvas: qrCanvas,
+        value: joinValue,
+        size:8
+    });
+}
