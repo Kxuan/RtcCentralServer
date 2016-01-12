@@ -16,33 +16,35 @@
 
 // Keep this in sync with the HTML element id attributes. Keep it sorted.
 var UI_CONSTANTS = {
-    confirmJoinButton:         '#confirm-join-button',
-    confirmJoinDiv:            '#confirm-join-div',
-    confirmJoinRoomSpan:       '#confirm-join-room-span',
-    fullscreenSvg:             '#fullscreen',
-    fullpageWrapper:           '#fullpage-wrapper',
-    hangupSvg:                 '#hangup',
-    icons:                     '#icons',
-    infoDiv:                   '#info-div',
-    localVideo:                '#local-video',
-    localVideoWrapper:         '#local-video-wrapper',
-    muteAudioSvg:              '#mute-audio',
-    muteVideoSvg:              '#mute-video',
-    newRoomButton:             '#new-room-button',
-    rejoinButton:              '#rejoin-button',
-    rejoinDiv:                 '#rejoin-div',
-    roomLinkHref:              '#room-link-href',
-    roomSelectionDiv:          '#room-selection',
-    roomSelectionInput:        '#room-id-input',
-    roomSelectionInputLabel:   '#room-id-input-label',
-    roomSelectionJoinButton:   '#join-button',
+    confirmJoinButton: '#confirm-join-button',
+    confirmJoinDiv: '#confirm-join-div',
+    confirmJoinRoomSpan: '#confirm-join-room-span',
+    fullscreenSvg: '#fullscreen',
+    fullpageWrapper: '#fullpage-wrapper',
+    hangupSvg: '#hangup',
+    icons: '#icons',
+    infoDiv: '#info-div',
+    localVideo: '#local-video',
+    localVideoWrapper: '#local-video-wrapper',
+    roomQrcodeSvg: '#roomQrcode',
+    muteAudioSvg: '#mute-audio',
+    muteVideoSvg: '#mute-video',
+    newRoomButton: '#new-room-button',
+    rejoinButton: '#rejoin-button',
+    rejoinDiv: '#rejoin-div',
+    roomLinkHref: '#room-link-href',
+    roomSelectionDiv: '#room-selection',
+    roomSelectionInput: '#room-id-input',
+    roomSelectionInputLabel: '#room-id-input-label',
+    roomSelectionJoinButton: '#join-button',
     roomSelectionRandomButton: '#random-button',
-    roomSelectionRecentList:   '#recent-rooms-list',
-    sharingDiv:                '#sharing-div',
-    statusDiv:                 '#status-div',
-    videosDiv:                 '#videos',
-    QRbutton:                  '#QRcode',
-    QRdiv:                     '#objDiv',
+    roomSelectionRecentList: '#recent-rooms-list',
+    sharingDiv: '#sharing-div',
+    statusDiv: '#status-div',
+    videosDiv: '#videos',
+    QRbutton: '#QRcode',
+    qrcodeMuteDiv: '#qrcodeMuteDiv',
+    qrcodeShareDiv: '#qrcodeShareDiv'
 };
 
 // The controller that connects the Call with the UI.
@@ -65,7 +67,8 @@ var AppController = function (loadingParams) {
     this.rejoinButton_ = $(UI_CONSTANTS.rejoinButton);
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
     this.QRbutton_ = $(UI_CONSTANTS.QRbutton);
-    this.QRdiv_ = $(UI_CONSTANTS.QRdiv);
+    this.qrcodeMuteDiv_ = $(UI_CONSTANTS.qrcodeMuteDiv);
+    this.qrcodeShareDiv_ = $(UI_CONSTANTS.qrcodeShareDiv);
 
 
     this.newRoomButton_.addEventListener('click',
@@ -75,6 +78,8 @@ var AppController = function (loadingParams) {
     this.QRbutton_.addEventListener('click',
         this.onQRcodeClick_.bind(this), false);
 
+    this.roomQrcodeIconSet_ =
+        new AppController.IconSet_(UI_CONSTANTS.roomQrcodeSvg);
     this.muteAudioIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.muteAudioSvg);
     this.muteVideoIconSet_ =
@@ -114,7 +119,7 @@ var AppController = function (loadingParams) {
             this.finishCallSetup_(this.loadingParams_.roomId);
 
             this.show_(this.QRbutton_);
-            this.QRdiv_.style.display = "inline"
+            this.qrcodeMuteDiv_.style.display = "inline"
 
         }.bind(this);
 
@@ -160,7 +165,7 @@ AppController.prototype.showRoomSelection_ = function () {
         this.createCall_();
         this.finishCallSetup_(roomName);
         this.show_(this.QRbutton_);
-        this.QRdiv_.style.display = "inline"
+        this.qrcodeMuteDiv_.style.display = "inline"
 
         this.roomSelection_ = null;
         if (this.localStream_) {
@@ -175,6 +180,7 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     document.onkeypress = this.onKeyPress_.bind(this);
     window.onmousemove = this.showIcons_.bind(this);
 
+    $(UI_CONSTANTS.roomQrcodeSvg).onclick = this.toggleQrcodeRoom_.bind(this);
     $(UI_CONSTANTS.muteAudioSvg).onclick = this.toggleAudioMute_.bind(this);
     $(UI_CONSTANTS.muteVideoSvg).onclick = this.toggleVideoMute_.bind(this);
     $(UI_CONSTANTS.fullscreenSvg).onclick = this.toggleFullScreen_.bind(this);
@@ -287,13 +293,13 @@ AppController.prototype.updateLayout = function () {
 };
 
 AppController.prototype.createPeerElement = function (videoStream) {
-    var el           = document.createElement('div'),
+    var el = document.createElement('div'),
         elBackground = document.createElement('div'),
-        elBackText   = document.createElement('div'),
-        elWrapper    = document.createElement('div'),
-        elVideo      = document.createElement('video'),
-        elControl    = document.createElement('div'),
-        elPeerId     = document.createElement('a');
+        elBackText = document.createElement('div'),
+        elWrapper = document.createElement('div'),
+        elVideo = document.createElement('video'),
+        elControl = document.createElement('div'),
+        elPeerId = document.createElement('a');
     el.className = 'peer';
     elBackground.className = 'background';
     elBackText.className = 'background-text';
@@ -341,8 +347,8 @@ AppController.prototype.initialRemoteVideo = function (pc) {
     }
     var remoteVideo = pc.getRemoteVideo();
     var ui = pc.ui = {
-        el:        this.createPeerElement(remoteVideo),
-        stream:    remoteVideo,
+        el: this.createPeerElement(remoteVideo),
+        stream: remoteVideo,
         __proto__: null
     };
     ui.el.peerId.innerText = pc.peerId;
@@ -394,7 +400,7 @@ AppController.prototype.attachLocalStream_ = function () {
     this.displayStatus_('');
     this.show_(this.icons_);
     this.hide_(this.QRbutton_);
-    this.QRdiv_.style.display = "none";
+    this.qrcodeMuteDiv_.style.display = "none";
 };
 
 AppController.prototype.transitionToDone_ = function () {
@@ -424,7 +430,7 @@ AppController.prototype.onQRcodeClick_ = function () {
     var curSObj = null;
     var curOpacity = null;
 
-    curSObj = this.QRdiv_;
+    curSObj = this.qrcodeMuteDiv_;
 
     setObjState();
 
@@ -540,6 +546,49 @@ AppController.prototype.displayStatus_ = function (status) {
 AppController.prototype.displayError_ = function (error) {
     trace(error);
     this.infoBox_.pushErrorMessage(error);
+};
+
+AppController.prototype.toggleQrcodeRoom_ = function () {
+    var intTimeStep = 20;
+    var intAlphaStep = 0.05;
+    var curSObj = null;
+    var curOpacity = null;
+
+    curSObj = this.qrcodeShareDiv_;
+
+    setObjState();
+
+    function setObjState() {
+        if (!curSObj.classList.contains('hidden')) {
+            curOpacity = 1;
+            setObjClose();
+        }
+        else {
+            curSObj.style.opacity = 0;
+            curSObj.classList.remove('hidden');
+            curOpacity = 0;
+            setObjOpen();
+        }
+    }
+
+    function setObjOpen() {
+        curOpacity += intAlphaStep;
+        curSObj.style.opacity = curOpacity;
+        if (curOpacity < 1) setTimeout(setObjOpen, intTimeStep);
+    }
+
+    function setObjClose() {
+        curOpacity -= intAlphaStep;
+        if (curOpacity > 0) {
+            curSObj.style.opacity = curOpacity;
+            setTimeout(setObjClose, intTimeStep);
+        }
+        else {
+            curSObj.classList.add('hidden');
+        }
+    }
+
+    this.roomQrcodeIconSet_.toggle();
 };
 
 AppController.prototype.toggleAudioMute_ = function () {
