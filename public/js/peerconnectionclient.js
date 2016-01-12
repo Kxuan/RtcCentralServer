@@ -196,11 +196,23 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
             }
 
             if (message.isHelper) {
-                console.trace("Android Helper Connected");
-                this.isHelper = true;
-                this.setRemoteSdp_(message.content);
-                this.doAnswer_();
-                this.call.onVideoHelperConnected(this);
+                var hasHelper = this.call.hasHelper();
+                if(!hasHelper) {
+                    console.trace("Android Helper Connected");
+                    this.isHelper = true;
+                    this.setRemoteSdp_(message.content);
+                    this.doAnswer_();
+                    this.call.onVideoHelperConnected(this);
+                }else{
+                    this.call.send({
+                        cmd:     "answer",
+                        accept:  false,
+                        to:      this.peerId
+                    });
+                    this.pc_.close();
+                    this.peerId = null;
+
+                }
             } else {
                 this.isHelper = false;
                 if (this.call.localStream_ !== null)
@@ -218,14 +230,19 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
             this.setRemoteSdp_(message.content);
             break;
         case 'candidate':
-            var candidate = new RTCIceCandidate({
-                sdpMLineIndex: message.content.label,
-                candidate:     message.content.candidate
-            });
-            this.recordIceCandidate_('Remote', candidate);
-            this.pc_.addIceCandidate(candidate,
-                trace.bind(null, 'Remote candidate added successfully.'),
-                this.onError_.bind(this, 'addIceCandidate'));
+            if(this.hasRemoteSdp_) {
+                var candidate = new RTCIceCandidate({
+                    sdpMLineIndex: message.content.label,
+                    candidate:     message.content.candidate
+                });
+                this.recordIceCandidate_('Remote', candidate);
+                this.pc_.addIceCandidate(candidate,
+                    trace.bind(null, 'Remote candidate added successfully.'),
+                    this.onError_.bind(this, 'addIceCandidate'));
+            }else {
+                console.error('recive candidate without sdp.');
+            }
+
             break;
         default:
             trace('WARNING: unexpected message: ' + JSON.stringify(message));

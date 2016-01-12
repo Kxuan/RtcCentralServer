@@ -121,7 +121,7 @@
 <button id="QRcode" class="hidden">手机助手</button>
 <DIV id="qrcodeMuteDiv" style="DISPLAY: none;">
     <ul>
-    <li>无音视频流</li>
+    <li>无法使用音视频设备</li>
     <li>
         <canvas id="qrcodeMuteCanvas"></canvas>
     </li>
@@ -154,14 +154,14 @@
 <script src="/js/stats.js"></script>
 <script src="/js/storage.js"></script>
 <script type="text/javascript">var loadingParams = {
-    mediaConstraints: {
+    mediaConstraints:          {
         "audio": true,
         "video": {"mandatory": {}, "optional": [{"minWidth": "1280"}, {"minHeight": "720"}]}
     },
-    offerConstraints: {"mandatory": {}, "optional": []},
-    peerConnectionConfig: {"iceServers": []},
+    offerConstraints:          {"mandatory": {}, "optional": []},
+    peerConnectionConfig:      {"iceServers": []},
     peerConnectionConstraints: {"optional": []},
-    bypassJoinConfirmation: false
+    bypassJoinConfirmation:    false
 };
 
 var appController;
