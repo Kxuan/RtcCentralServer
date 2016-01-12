@@ -39,8 +39,7 @@ var PeerConnectionClient = function (peerId, call) {
     this.pc_.onaddstream = this.onRemoteStreamAdded_.bind(this);
     this.pc_.onremovestream = trace.bind(null, 'Remote stream removed.');
     this.pc_.onsignalingstatechange = this.onSignalingStateChanged_.bind(this);
-    this.pc_.oniceconnectionstatechange =
-        this.onIceConnectionStateChanged_.bind(this);
+    this.pc_.oniceconnectionstatechange =this.onIceConnectionStateChanged_.bind(this);
 
     this.hasRemoteSdp_ = false;
     this.started_ = false;
@@ -55,6 +54,8 @@ var PeerConnectionClient = function (peerId, call) {
     this.onremotestreamadded = null;
     this.onsignalingstatechange = null;
 };
+
+EventEmitter.bindPrototype(PeerConnectionClient);
 
 // Set up audio and video regardless of what devices are present.
 // Disable comfort noise for maximum audio quality.
@@ -164,7 +165,6 @@ PeerConnectionClient.prototype.adjustLocalSdpAndNotify =
         this.pc_.setLocalDescription(sessionDescription,
             trace.bind(null, 'Set session description success.'),
             this.onError_.bind(this, 'setLocalDescription'));
-
         return sessionDescription;
     };
 
@@ -183,7 +183,7 @@ PeerConnectionClient.prototype.setRemoteSdp_ = function (message) {
 
 PeerConnectionClient.prototype.onSetRemoteDescriptionSuccess_ = function () {
     trace('Set remote session description success.');
-    this.onremoteSdp();
+    this.emit("remoteSdp");
 };
 
 PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
@@ -277,10 +277,7 @@ PeerConnectionClient.prototype.onSignalingStateChanged_ = function () {
         return;
     }
     trace('Signaling state changed to: ' + this.pc_.signalingState);
-
-    if (this.onsignalingstatechange) {
-        this.onsignalingstatechange();
-    }
+    this.emit('signalingstatechange');
 };
 
 PeerConnectionClient.prototype.onIceConnectionStateChanged_ = function () {
@@ -292,10 +289,7 @@ PeerConnectionClient.prototype.onIceConnectionStateChanged_ = function () {
         trace('ICE complete time: ' +
             (window.performance.now() - this.startTime_).toFixed(0) + 'ms.');
     }
-
-    if (this.oniceconnectionstatechange) {
-        this.oniceconnectionstatechange();
-    }
+    this.emit('iceconnectionstatechange');
 };
 
 // Return false if the candidate should be dropped, true if not.
@@ -318,21 +312,15 @@ PeerConnectionClient.prototype.filterIceCandidate_ = function (candidateObj) {
 
 PeerConnectionClient.prototype.recordIceCandidate_ =
     function (location, candidateObj) {
-        if (this.onnewicecandidate) {
-            this.onnewicecandidate(location, candidateObj.candidate);
-        }
+        this.emit('newicecandidate',location, candidateObj.candidate);
     };
 
 PeerConnectionClient.prototype.onRemoteStreamAdded_ = function (event) {
-    if (this.onremotestreamadded) {
-        this.onremotestreamadded(this, event.stream);
-    }
+    this.emit('remotestreamadded',this, event.stream);
 };
 
 PeerConnectionClient.prototype.onError_ = function (tag, error) {
-    if (this.onerror) {
-        this.onerror(tag + ': ' + error.toString());
-    }
+    this.emit('error',(tag + ': ' + error.toString()));
 };
 
 PeerConnectionClient.prototype.getRemoteStreams = function () {

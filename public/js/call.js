@@ -102,7 +102,7 @@ Call.prototype.hangup = function () {
 };
 
 Call.prototype.closePeer = function (uid) {
-    if (!isNaN(parseInt(uid)))
+    if (isNaN(parseInt(uid)))
         throw new Error("uid is not a valid number");
 
     if (!(uid in this.peerConnections)) {
@@ -290,16 +290,16 @@ Call.prototype.getPeerConnection = function (peerId) {
         var pc = this.peerConnections[peerId] =
             new PeerConnectionClient(peerId, this);
 
-        pc.onremotehangup = this.onremotehangup.bind(this, pc);
-        pc.onremoteSdp = function () {
+        pc.on('remotehangup',this.onremotehangup.bind(this, pc));
+        pc.on("remoteSdp",function () {
             if (!pc.isHelper)
                 this.onremoteSdp(pc);
-        }.bind(this);
-        pc.onremotestreamadded = this.onRemoteStreamAdded.bind(this);
-        pc.onsignalingstatechange = this.onsignalingstatechange;
-        pc.oniceconnectionstatechange = this.oniceconnectionstatechange;
-        pc.onnewicecandidate = this.onnewicecandidate;
-        pc.onerror = this.onerror;
+        }.bind(this));
+        pc.on('remotestreamadded',this.onRemoteStreamAdded.bind(this));
+        pc.on('signalingstatechange',this.onsignalingstatechange);
+        pc.on('iceconnectionstatechange',this.oniceconnectionstatechange);
+        pc.on('newicecandidate',this.onnewicecandidate);
+        pc.on('error',this.onerror);
         trace('Created PeerConnectionClient');
         return pc;
     } catch (e) {
