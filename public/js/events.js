@@ -88,4 +88,8 @@
         ctor.prototype = EventEmitter.prototype;
     };
     this.EventEmitter = EventEmitter;
-}).call(window);
+}).call(
+    (function () {
+        return this
+    })()
+);
