@@ -389,7 +389,8 @@ AppController.prototype.destroyRemoteVideo = function (pc) {
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     trace('Remote stream added.');
     if (stream.getVideoTracks().length > 0) {
-        this.prepareVideoElement(ui, stream);
+        this.prepareVideoElement(pc.ui, stream);
+        this.updateLayout();
     }
 };
 
