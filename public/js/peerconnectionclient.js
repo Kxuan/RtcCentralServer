@@ -209,9 +209,7 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                         accept:  false,
                         to:      this.peerId
                     });
-                    this.pc_.close();
-                    this.peerId = null;
-
+                    this.call.closePeer(this.peerId);
                 }
             } else {
                 this.isHelper = false;
