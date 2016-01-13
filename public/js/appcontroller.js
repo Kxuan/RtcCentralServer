@@ -160,7 +160,7 @@ AppController.prototype.showRoomSelection_ = function () {
     var roomSelectionDiv = $(UI_CONSTANTS.roomSelectionDiv);
     this.roomSelection_ = new RoomSelection(roomSelectionDiv, UI_CONSTANTS);
     this.show_(roomSelectionDiv);
-    this.roomSelection_.onRoomSelected = function (roomName) {
+    /*this.roomSelection_.onRoomSelected = function (roomName) {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
@@ -171,7 +171,19 @@ AppController.prototype.showRoomSelection_ = function () {
         if (this.localStream_) {
             this.attachLocalStream_();
         }
-    }.bind(this);
+    }.bind(this);*/
+    this.roomSelection_.on('RoomSelected',function (roomName) {
+        this.hide_(roomSelectionDiv);
+        this.createCall_();
+        this.finishCallSetup_(roomName);
+        this.show_(this.QRbutton_);
+        this.qrcodeMuteDiv_.style.display = "block";
+
+        this.roomSelection_ = null;
+        if (this.localStream_) {
+            this.attachLocalStream_();
+        }
+    }.bind(this));
 };
 
 AppController.prototype.finishCallSetup_ = function (roomId) {

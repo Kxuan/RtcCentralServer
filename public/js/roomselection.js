@@ -34,7 +34,8 @@ var RoomSelection = function(roomSelectionDiv,
   // Call onRoomIdInput_ now to validate initial state of input box.
   this.onRoomIdInput_();
   this.roomIdInput_.addEventListener('input',
-      this.onRoomIdInput_.bind(this), false);
+      this.onRoomIdInput_.bind(this),
+      false);
   this.roomIdInput_.addEventListener('keyup',
       this.onRoomIdKeyPress_.bind(this), false);
   this.roomRandomButton_.addEventListener('click',
@@ -42,12 +43,13 @@ var RoomSelection = function(roomSelectionDiv,
   this.roomJoinButton_.addEventListener('click',
       this.onJoinButton_.bind(this), false);
 
-  // Public callbacks. Keep it sorted.
-  this.onRoomSelected = null;
-
   this.recentlyUsedList_ = new RoomSelection.RecentlyUsedList(recentRoomsKey);
   this.startBuildingRecentRoomList_();
+
+  // Public callbacks. Keep it sorted.
+  this.onRoomSelected = null;
 };
+EventEmitter.bindPrototype(RoomSelection);
 
 RoomSelection.matchRandomRoomPattern = function(input) {
   return input.match(/^\d{9}$/) !== null;
@@ -130,9 +132,10 @@ RoomSelection.prototype.makeRecentlyUsedClickHandler_ = function(roomName) {
 
 RoomSelection.prototype.loadRoom_ = function(roomName) {
   this.recentlyUsedList_.pushRecentRoom(roomName);
-  if (this.onRoomSelected) {
+  /*if (this.onRoomSelected) {
     this.onRoomSelected(roomName);
-  }
+  }*/
+  this.emit('RoomSelected',roomName);
 };
 
 RoomSelection.RecentlyUsedList = function(key) {
