@@ -39,6 +39,7 @@ var Call = function (loadingParams) {
     this.getTurnServersPromise_ = null;
     this.isMediaError_ = true;
 };
+EventEmitter.bindPrototype(Call);
 
 Call.prototype.requestMediaAndTurnServers_ = function () {
     this.getMediaPromise_ = this.maybeGetMedia_();
@@ -54,7 +55,7 @@ Call.prototype.start = function (roomId) {
 
         this.channel_ = new SignalingChannel(params.wss_url);
         //this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
-        this.channel_.on('message',this.onRecvSignalingChannelMessage_.bind(this));
+        this.channel_.on('message', this.onRecvSignalingChannelMessage_.bind(this));
 
         this.requestMediaAndTurnServers_();
         this.connectToRoom_(roomId);
@@ -116,9 +117,6 @@ Call.prototype.closePeer = function (uid) {
 
 };
 
-Call.prototype.onRemoteHangup = function (uid) {
-    //TODO What should I do, if peer hangup?
-};
 
 Call.prototype.getPeerConnectionStates = function () {
     var statesObject = {__proto__: null},
@@ -248,18 +246,16 @@ Call.prototype.maybeGetTurnServers_ = function () {
             this.params_.peerConnectionConfig.iceServers =
                 iceServers.concat(turnServers);
         }.bind(this)).catch(function (error) {
-        if (this.onstatusmessage) {
-            // Error retrieving TURN servers.
-            showAlert('无法连接到转发服务器！');
-            var subject =
-                    encodeURIComponent('AppRTC demo TURN server not working');
-            this.onstatusmessage(
-                'No TURN server; unlikely that media will traverse networks. ' +
-                'If this persists please ' +
-                '<a href="mailto:discuss-webrtc@googlegroups.com?' +
-                'subject=' + subject + '">' +
-                'report it to discuss-webrtc@googlegroups.com</a>.');
-        }
+        showAlert('无法连接到转发服务器！');
+        // Error retrieving TURN servers.
+        var subject =
+                encodeURIComponent('AppRTC demo TURN server not working');
+        this.emit('statusmessage',
+            'No TURN server; unlikely that media will traverse networks. ' +
+            'If this persists please ' +
+            '<a href="mailto:discuss-webrtc@googlegroups.com?' +
+            'subject=' + subject + '">' +
+            'report it to discuss-webrtc@googlegroups.com</a>.');
         trace(error.message);
     }.bind(this));
 };
@@ -269,9 +265,8 @@ Call.prototype.onUserMediaSuccess_ = function (stream) {
     this.getMediaError_ = false;
     if (stream === null)
         console.trace("onUserMediaSuccess stream is null.");
-    if (this.onlocalstreamadded) {
-        this.onlocalstreamadded(stream);
-    }
+
+    this.emit('localstreamadded', stream);
 };
 
 Call.prototype.onUserMediaError_ = function (error) {
@@ -291,16 +286,17 @@ Call.prototype.getPeerConnection = function (peerId) {
         var pc = this.peerConnections[peerId] =
             new PeerConnectionClient(peerId, this);
 
-        pc.on('remotehangup',this.onremotehangup.bind(this, pc));
-        pc.on("remoteSdp",function () {
-            if (!pc.isHelper)
-                this.onremoteSdp(pc);
+        pc.on('remotehangup', this.emit.bind(this, 'remotehangup', pc));
+        pc.on("remoteSdp", function () {
+            if (!pc.isHelper) {
+                this.emit('remoteSdp', pc);
+            }
         }.bind(this));
-        pc.on('remotestreamadded',this.onRemoteStreamAdded.bind(this));
-        pc.on('signalingstatechange',this.onsignalingstatechange);
-        pc.on('iceconnectionstatechange',this.oniceconnectionstatechange);
-        pc.on('newicecandidate',this.onnewicecandidate);
-        pc.on('error',this.onerror);
+        pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this));
+        pc.on('signalingstatechange', this.emit.bind(this, 'signalingstatechange'));
+        pc.on('iceconnectionstatechange', this.emit.bind(this, 'iceconnectionstatechange'));
+        pc.on('newicecandidate', this.emit.bind(this, 'newicecandidate'));
+        pc.on('error', this.emit.bind(this, 'error'));
         trace('Created PeerConnectionClient');
         return pc;
     } catch (e) {
@@ -314,9 +310,8 @@ Call.prototype.getPeerConnection = function (peerId) {
 
 Call.prototype.startSignaling_ = function () {
     trace('Starting signaling.');
-    if (this.oncallerstarted) {
-        this.oncallerstarted(this.params_.roomId, this.params_.roomLink);
-    }
+
+    this.emit("callerstarted", this.params_.roomId, this.params_.roomLink);
 
     this.startTime = window.performance.now();
 };
@@ -384,7 +379,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         case 'leave':
             showAlert(msg.id + '退出房间');
             pc = this.getPeerConnection(msg.id);
-            this.onremotehangup(pc);
+            this.emit('remotehangup', pc);
             break;
 
         default:
@@ -401,25 +396,23 @@ Call.prototype.send = function (message) {
 Call.prototype.onRemoteStreamAdded = function (pc, stream) {
     if (pc.isHelper) {
         this.localStream_ = stream;
-        this.onlocalstreamadded(stream);
-        for(var chromepc in this.peerConnections) {
-            if(this.peerConnections[chromepc].isHelper === false) {
+        this.emit('localstreamadded', stream);
+        for (var chromepc in this.peerConnections) {
+            if (this.peerConnections[chromepc].isHelper === false) {
                 this.peerConnections[chromepc].addStream(stream);
             }
         }
     } else {
-        this.onremotestreamadded(pc, stream);
+        this.emit('remotestreamadded', pc, stream);
     }
 };
 Call.prototype.onError_ = function (message) {
-    if (this.onerror) {
-        this.onerror(message);
-    }
+    this.emit('error', message);
 };
 Call.prototype.hasHelper = function () {
     var pc;
-    for(pc in this.peerConnections) {
-        if(this.peerConnections[pc].isHelper === true) {
+    for (pc in this.peerConnections) {
+        if (this.peerConnections[pc].isHelper === true) {
             return true;
         }
     }

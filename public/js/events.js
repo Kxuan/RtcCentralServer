@@ -83,10 +83,10 @@
             throw new TypeError("The 1st argument is not a string");
         }
 
-        if (!this._events)
+        if (!this._events || !this._events[event]) {
+            console.warn("%O上没有任何%s事件监听器", event);
             return this;
-        if (!this._events[event])
-            return this;
+        }
         var extra_arguments = Array.prototype.slice.call(arguments, 1);
         var handlers = this._events[event].slice();
         handlers.forEach(function (fn) {
