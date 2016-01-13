@@ -350,24 +350,9 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
 };
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     trace('Remote stream added.');
-    if (!pc.ui) {
-        throw new Error("Missing PeerController on PeerConnectionClient");
-    }
-    if (stream.getVideoTracks().length > 0 && !pc.ui.getVideoStream()) {
-        pc.ui.attachVideo(stream);
-        this.updateLayout();
-    }
-};
+                                                                                                                          };
 AppController.prototype.onRemoteStreamRemoved = function (pc, stream) {
     trace('Remote stream added.');
-    if (!pc.ui) {
-        throw new Error("Missing PeerController on PeerConnectionClient");
-    }
-    var ui = pc.ui;
-    if (ui.getVideoStream() === stream) {
-        ui.detachVideo();
-        this.updateLayout();
-    }
 };
 
 AppController.prototype.onLocalStreamAdded_ = function (stream) {

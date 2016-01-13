@@ -3,7 +3,7 @@
  * @param {PeerConnectionClient} pc
  * @constructor
  *
- * @event layoutChanged Emit on layout is changed
+ * @event layoutChange Emit on layout is changed
  */
 function PeerController(pc) {
     if (pc.ui) {
@@ -18,6 +18,8 @@ function PeerController(pc) {
     if (remoteVideo) {
         this.attachVideo(remoteVideo);
     }
+    pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this));
+    pc.on('remotestreamremoved', this.onRemoteStreamRemoved.bind(this));
 }
 EventEmitter.bindPrototype(PeerController);
 PeerController.prototype.getVideoStream = function () {
@@ -133,4 +135,18 @@ PeerController.prototype.createPeerElement = function () {
     el.appendChild(elWrapper);
     el.appendChild(elControl);
     return {root: el, wrapper: elWrapper, video: elVideo, peerId: elPeerId, backText: elBackText};
+};
+
+PeerController.prototype.onRemoteStreamAdded = function (stream) {
+    if (stream.getVideoTracks().length > 0 && !this.videoStream) {
+        this.attachVideo(stream);
+        this.emit('layoutChange');
+    }
+};
+
+PeerController.prototype.onRemoteStreamRemoved = function (stream) {
+    if (this.videoStream === stream) {
+        this.detachVideo();
+        this.emit('layoutChange');
+    }
 };

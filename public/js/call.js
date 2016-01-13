@@ -292,7 +292,7 @@ Call.prototype.getPeerConnection = function (peerId) {
                 this.emit('remoteSdp', pc);
             }
         }.bind(this));
-        pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this));
+        pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this,pc));
         pc.on('signalingstatechange', this.emit.bind(this, 'signalingstatechange'));
         pc.on('iceconnectionstatechange', this.emit.bind(this, 'iceconnectionstatechange'));
         pc.on('newicecandidate', this.emit.bind(this, 'newicecandidate'));
