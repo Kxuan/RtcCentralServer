@@ -64,9 +64,9 @@
         } else if (handler === undefined) {
             delete this._events[event];
             return this;
-        } else if (this._events[event] instanceof Array){
+        } else if (this._events[event] instanceof Array) {
             var allFn = this._events[event];
-            
+
             for (var i = 0; i < allFn.length; i++) {
                 var fn = allFn[i];
                 if (fn === handler || fn._eventFn === handler) {
@@ -95,7 +95,7 @@
         return this;
     };
     EventEmitter.bindPrototype = function (ctor) {
-        ctor.prototype = EventEmitter.prototype;
+        ctor.prototype = Object.create(EventEmitter.prototype);
     };
     this.EventEmitter = EventEmitter;
 }).call(
