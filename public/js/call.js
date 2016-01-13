@@ -402,6 +402,11 @@ Call.prototype.onRemoteStreamAdded = function (pc, stream) {
     if (pc.isHelper) {
         this.localStream_ = stream;
         this.onlocalstreamadded(stream);
+        for(var chromepc in this.peerConnections) {
+            if(this.peerConnections[chromepc].isHelper === false) {
+                this.peerConnections[chromepc].addStream(stream);
+            }
+        }
     } else {
         this.onremotestreamadded(pc, stream);
     }

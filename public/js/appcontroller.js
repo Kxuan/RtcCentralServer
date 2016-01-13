@@ -16,35 +16,35 @@
 
 // Keep this in sync with the HTML element id attributes. Keep it sorted.
 var UI_CONSTANTS = {
-    confirmJoinButton: '#confirm-join-button',
-    confirmJoinDiv: '#confirm-join-div',
-    confirmJoinRoomSpan: '#confirm-join-room-span',
-    fullscreenSvg: '#fullscreen',
-    fullpageWrapper: '#fullpage-wrapper',
-    hangupSvg: '#hangup',
-    icons: '#icons',
-    infoDiv: '#info-div',
-    localVideo: '#local-video',
-    localVideoWrapper: '#local-video-wrapper',
-    roomQrcodeSvg: '#roomQrcode',
-    muteAudioSvg: '#mute-audio',
-    muteVideoSvg: '#mute-video',
-    newRoomButton: '#new-room-button',
-    rejoinButton: '#rejoin-button',
-    rejoinDiv: '#rejoin-div',
-    roomLinkHref: '#room-link-href',
-    roomSelectionDiv: '#room-selection',
-    roomSelectionInput: '#room-id-input',
-    roomSelectionInputLabel: '#room-id-input-label',
-    roomSelectionJoinButton: '#join-button',
+    confirmJoinButton:         '#confirm-join-button',
+    confirmJoinDiv:            '#confirm-join-div',
+    confirmJoinRoomSpan:       '#confirm-join-room-span',
+    fullscreenSvg:             '#fullscreen',
+    fullpageWrapper:           '#fullpage-wrapper',
+    hangupSvg:                 '#hangup',
+    icons:                     '#icons',
+    infoDiv:                   '#info-div',
+    localVideo:                '#local-video',
+    localVideoWrapper:         '#local-video-wrapper',
+    roomQrcodeSvg:             '#roomQrcode',
+    muteAudioSvg:              '#mute-audio',
+    muteVideoSvg:              '#mute-video',
+    newRoomButton:             '#new-room-button',
+    rejoinButton:              '#rejoin-button',
+    rejoinDiv:                 '#rejoin-div',
+    roomLinkHref:              '#room-link-href',
+    roomSelectionDiv:          '#room-selection',
+    roomSelectionInput:        '#room-id-input',
+    roomSelectionInputLabel:   '#room-id-input-label',
+    roomSelectionJoinButton:   '#join-button',
     roomSelectionRandomButton: '#random-button',
-    roomSelectionRecentList: '#recent-rooms-list',
-    sharingDiv: '#sharing-div',
-    statusDiv: '#status-div',
-    videosDiv: '#videos',
-    QRbutton: '#QRcode',
-    qrcodeMuteDiv: '#qrcodeMuteDiv',
-    qrcodeShareDiv: '#qrcodeShareDiv'
+    roomSelectionRecentList:   '#recent-rooms-list',
+    sharingDiv:                '#sharing-div',
+    statusDiv:                 '#status-div',
+    videosDiv:                 '#videos',
+    QRbutton:                  '#QRcode',
+    qrcodeMuteDiv:             '#qrcodeMuteDiv',
+    qrcodeShareDiv:            '#qrcodeShareDiv'
 };
 
 // The controller that connects the Call with the UI.
@@ -292,6 +292,35 @@ AppController.prototype.updateLayout = function () {
 
 };
 
+AppController.prototype.prepareVideoElement = function (ui, videoStream) {
+    var el = ui.el;
+    if (!ui.isVideoElementPrepared) {
+        ui.isVideoElementPrepared = true;
+        el.backText.innerText = "等待视频源";
+        if (el.video.readyState <= 2) {
+            var listener = function () {
+                this.updateLayout();
+                el.video.removeEventListener('canplay', listener);
+            }.bind(this);
+            el.video.addEventListener('canplay', listener);
+        }
+        el.video.onprogress = function (p) {
+            if (this.readyState > 2) {
+                el.root.style.width = ((this.videoWidth / this.videoHeight) * el.root.clientHeight) + 'px';
+                el.backText.innerText = "已全屏";
+            }
+        };
+        el.root.style.cursor = 'pointer';
+
+        ui.el.root.addEventListener('click', function () {
+            this.currentFullPageUI = ui;
+            this.updateLayout();
+        }.bind(this));
+    }
+    attachMediaStream(el.video, videoStream);
+
+};
+
 AppController.prototype.createPeerElement = function (videoStream) {
     var el           = document.createElement('div'),
         elBackground = document.createElement('div'),
@@ -310,27 +339,8 @@ AppController.prototype.createPeerElement = function (videoStream) {
 
     elVideo.autoplay = true;
 
-    if (videoStream) {
-        elBackText.innerText = "等待视频源";
-        if (elVideo.readyState <= 2) {
-            var listener = function () {
-                this.updateLayout();
-                elVideo.removeEventListener('canplay', listener);
-            }.bind(this);
-            elVideo.addEventListener('canplay', listener);
-        }
-        elVideo.onprogress = function (p) {
-            if (this.readyState > 2) {
-                el.style.width = ((this.videoWidth / this.videoHeight) * el.clientHeight) + 'px';
-                elBackText.innerText = "已全屏";
-            }
-        };
-        attachMediaStream(elVideo, videoStream);
-        el.style.cursor = 'pointer';
-    } else {
-        el.style.width = '100px';
-        elBackText.innerText = "无视频";
-    }
+    el.style.width = '100px';
+    elBackText.innerText = "无视频";
 
     elBackground.appendChild(elBackText);
     elWrapper.appendChild(elVideo);
@@ -339,7 +349,7 @@ AppController.prototype.createPeerElement = function (videoStream) {
     el.appendChild(elWrapper);
     el.appendChild(elControl);
     this.videosDiv_.appendChild(el);
-    return {root: el, wrapper: elWrapper, video: elVideo, peerId: elPeerId};
+    return {root: el, wrapper: elWrapper, video: elVideo, peerId: elPeerId, backText: elBackText};
 };
 AppController.prototype.initialRemoteVideo = function (pc) {
     if (pc.ui) {
@@ -355,10 +365,7 @@ AppController.prototype.initialRemoteVideo = function (pc) {
     ui.el.peerId.title = pc.peerId;
 
     if (remoteVideo) {
-        ui.el.root.addEventListener('click', function () {
-            this.currentFullPageUI = ui;
-            this.updateLayout();
-        }.bind(this));
+        this.prepareVideoElement(ui, remoteVideo);
     }
 
     this.allRemoteElements.push(ui);
@@ -381,6 +388,10 @@ AppController.prototype.destroyRemoteVideo = function (pc) {
 };
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     trace('Remote stream added.');
+    if (stream.getVideoTracks().length > 0) {
+        this.prepareVideoElement(pc.ui, stream);
+        this.updateLayout();
+    }
 };
 
 AppController.prototype.onLocalStreamAdded_ = function (stream) {

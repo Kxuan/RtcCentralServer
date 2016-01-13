@@ -31,8 +31,19 @@
             handler.apply(this, arguments);
             this.off(event, emitFn);
         };
-        emitFn.applyFn = handler;
+        emitFn._eventFn = handler;
         return this.on(event, emitFn);
+    };
+
+    EventEmitter.prototype.bindEventEmitter = function (target, event) {
+        if (event !== undefined && typeof event !== 'string') {
+            throw new TypeError("The 2nd argument is not a string");
+        }
+        if (!target._events) {
+            target._events = {__proto__: null};
+        }
+
+        this._events = target._events;
     };
 
     EventEmitter.prototype.off = function (event, handler) {
@@ -46,24 +57,23 @@
             return this;
 
         if (event === undefined) {
-            delete this._events;
+            for (var eventName in this._events) {
+                delete this._events[eventName];
+            }
             return this;
         } else if (handler === undefined) {
             delete this._events[event];
             return this;
-        } else {
-            if (!this._events[event])
-                return this;
-
+        } else if (this._events[event] instanceof Array){
             var allFn = this._events[event];
+            
             for (var i = 0; i < allFn.length; i++) {
                 var fn = allFn[i];
-                if (fn === handler || fn.applyFn === handler) {
+                if (fn === handler || fn._eventFn === handler) {
                     allFn.splice(i, 1);
                     return this;
                 }
             }
-
         }
         return this;
     };

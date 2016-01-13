@@ -42,7 +42,9 @@ var PeerConnectionClient = function (peerId, call) {
     this.pc_.oniceconnectionstatechange =this.onIceConnectionStateChanged_.bind(this);
 
     this.hasRemoteSdp_ = false;
+    this.hasLocalSdp_ = false;
     this.started_ = false;
+    this.isHelper = false;
 
     // TODO(jiayl): Replace callbacks with events.
     // Public callbacks. Keep it sorted.
@@ -74,6 +76,23 @@ PeerConnectionClient.prototype.addStream = function (stream) {
         return;
     }
     this.pc_.addStream(stream);
+
+    if(this.hasLocalSdp_){
+        var constraints = PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_;
+        this.pc_.createOffer(
+            function (sdp) {
+                sdp = this.adjustLocalSdpAndNotify(sdp);
+                this.call.send({
+                    cmd:      "offer",
+                    to:       this.peerId,
+                    isHelper: false,
+                    content:  sdp
+                });
+            }.bind(this),
+            this.onError_.bind(this, 'createOffer'),
+            constraints
+        );
+    }
 };
 
 PeerConnectionClient.prototype.startConnection = function () {
@@ -90,6 +109,7 @@ PeerConnectionClient.prototype.startConnection = function () {
     this.pc_.createOffer(
         function (sdp) {
             sdp = this.adjustLocalSdpAndNotify(sdp);
+            this.hasLocalSdp_ = true;
             this.call.send({
                 cmd:      "offer",
                 to:       this.peerId,
@@ -136,6 +156,7 @@ PeerConnectionClient.prototype.doAnswer_ = function () {
     this.pc_.createAnswer(
         function (sdp) {
             sdp = this.adjustLocalSdpAndNotify(sdp);
+            this.hasLocalSdp_ = true;
             this.call.send({
                 cmd:     "answer",
                 accept:  true,
@@ -195,42 +216,41 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 return;
             }
 
-            if (message.isHelper) {
-                var hasHelper = this.call.hasHelper();
-                if(!hasHelper) {
-                    console.trace("Android Helper Connected");
-                    this.isHelper = true;
-                    this.setRemoteSdp_(message.content);
-                    this.doAnswer_();
-                    this.call.onVideoHelperConnected(this);
-                }else{
-                    this.call.send({
-                        cmd:     "answer",
-                        accept:  false,
-                        to:      this.peerId
-                    });
-                    this.pc_.close();
-                    this.peerId = null;
-
-                }
-            } else {
-                this.isHelper = false;
-                if (this.call.localStream_ !== null)
-                    this.addStream(this.call.localStream_);
+            if(this.hasRemoteSdp_){
                 this.setRemoteSdp_(message.content);
                 this.doAnswer_();
+            }else{
+                if (message.isHelper) {
+                    var hasHelper = this.call.hasHelper();
+                    if (!hasHelper) {
+                        console.trace("Android Helper Connected");
+                        this.isHelper = true;
+                        this.setRemoteSdp_(message.content);
+                        this.doAnswer_();
+                        this.call.onVideoHelperConnected(this);
+                    } else {
+                        this.call.send({
+                            cmd:    "answer",
+                            accept: false,
+                            to:     this.peerId
+                        });
+                        this.call.closePeer(this.peerId);
+                    }
+                } else {
+                    this.isHelper = false;
+                    if (this.call.localStream_ !== null)
+                        this.addStream(this.call.localStream_);
+                    this.setRemoteSdp_(message.content);
+                    this.doAnswer_();
+                }
             }
+
             break;
         case 'answer':
-            if (this.pc_.signalingState !== 'have-local-offer') {
-                trace('ERROR: remote answer received in unexpected state: ' +
-                    this.pc_.signalingState);
-                return;
-            }
             this.setRemoteSdp_(message.content);
             break;
         case 'candidate':
-            if(this.hasRemoteSdp_) {
+            if (this.hasRemoteSdp_) {
                 var candidate = new RTCIceCandidate({
                     sdpMLineIndex: message.content.label,
                     candidate:     message.content.candidate
@@ -239,7 +259,7 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 this.pc_.addIceCandidate(candidate,
                     trace.bind(null, 'Remote candidate added successfully.'),
                     this.onError_.bind(this, 'addIceCandidate'));
-            }else {
+            } else {
                 console.error('recive candidate without sdp.');
             }
 
