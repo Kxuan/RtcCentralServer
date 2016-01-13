@@ -220,15 +220,6 @@ AppController.prototype.hangup_ = function () {
     // Call hangup with async = true.
     this.call_.hangup();
 };
-
-AppController.prototype.onRemoteSdp = function (pc) {
-    this.initialRemotePeer(pc);
-};
-AppController.prototype.onRemoteHangup_ = function (pc) {
-    this.displayStatus_('The remote side hung up.');
-    this.destroyRemotePeer(pc);
-    this.show_(this.QRbutton_);
-};
 AppController.prototype.setVideoFullpage = function (el) {
     if (el.parentElement != this.fullpageWrapper) {
         el.parentElement.removeChild(el);
@@ -254,23 +245,22 @@ AppController.prototype.updateLayout = function () {
     //遍历所有远程视频标签，
     // 该全屏的全屏，不该全屏的缩小掉
     this.allRemoteElements.forEach(function (ui) {
-        var el = ui.el;
         if (ui === this.currentFullPageUI) {
-            this.setVideoFullpage(el.video, el.wrapper);
+            this.setVideoFullpage(ui.getVideoElement(), ui.getVideoWrapper());
         } else {
-            this.setVideoMini(el.video, el.wrapper);
+            this.setVideoMini(ui.getVideoElement(), ui.getVideoWrapper());
         }
-
-        if (ui.el.video.readyState > 2) {
+        var video = ui.getVideoElement();
+        if (video && video.readyState > 2) {
             countPlayableVideo++;
         }
     }.bind(this));
 
     //如果有不能播放的远程视频或者远程视频不止1个，则显示远程视频栏
     if (countPlayableVideo != this.allRemoteElements.length || this.allRemoteElements.length > 1) {
-        this.videosDiv_.style.display = 'block';
+        this.videosDiv_.classList.remove('hide');
     } else {
-        this.videosDiv_.style.display = 'none';
+        this.videosDiv_.classList.add('hide');
     }
 
     //如果此时有远程视频源，则显示挂断按钮
@@ -291,147 +281,69 @@ AppController.prototype.updateLayout = function () {
 
 };
 
-AppController.prototype.attachVideo = function (ui, videoStream) {
-    if (ui.videoContext) {
-        return;
-    }
-    var el      = ui.el,
-        context = ui.videoContext = {
-            stream:    videoStream,
-            __proto__: null
-        };
+AppController.prototype.attachLocalStream_ = function () {
+    // Call the polyfill wrapper to attach the media stream to this element.
+    attachMediaStream(this.localVideo_, this.localStream_);
 
-    el.backText.innerText = "等待视频源";
-    if (el.video.readyState <= 2) {
-        var listener = function () {
-            this.updateLayout();
-            el.video.removeEventListener('canplay', listener);
-            delete context.canplayListener;
-        }.bind(this);
-        context.canplayListener = listener;
-        el.video.addEventListener('canplay', listener);
-    }
-    el.root.style.cursor = 'pointer';
-
-    attachMediaStream(el.video, videoStream);
-
-};
-AppController.prototype.detachVideo = function (ui) {
-    if (!ui.videoContext) {
-        return;
-    }
-
-    var el      = ui.el,
-        context = ui.videoContext;
-    delete ui.videoContext;
-
-    el.backText.innerText = "无视频源";
-    if (context.canplayListener) {
-        el.video.removeEventListener('canplay', context.canplayListener);
-        delete context.canplayListener;
-    }
-    el.root.style.cursor = 'not-allowed';
-
-    attachMediaStream(el.video, null);
-
+    this.displayStatus_('');
+    this.show_(this.icons_);
+    this.hide_(this.QRbutton_);
+    this.qrcodeMuteDiv_.style.display = "none";
 };
 
-//创建对端HTML面板
-AppController.prototype.createPeerElement = function () {
-    var el           = document.createElement('div'),
-        elBackground = document.createElement('div'),
-        elBackText   = document.createElement('div'),
-        elWrapper    = document.createElement('div'),
-        elVideo      = document.createElement('video'),
-        elControl    = document.createElement('div'),
-        elPeerId     = document.createElement('a');
-    el.className = 'peer';
-    elBackground.className = 'background';
-    elBackText.className = 'background-text';
-    elWrapper.className = 'wrapper';
-    elControl.className = 'control-box';
-    elPeerId.className = 'peerName';
+AppController.prototype.transitionToDone_ = function () {
+    this.deactivate_(this.localVideo_);
+    this.hide_(this.hangupSvg_);
+    this.activate_(this.rejoinDiv_);
+    this.show_(this.rejoinDiv_);
+    this.displayStatus_('');
+};
 
+AppController.prototype.onRemoteSdp = function (pc) {
+    var ui = pc.ui;
+    if (!ui) {
+        ui = pc.ui = new PeerController(pc);
 
-    elVideo.autoplay = true;
-    elVideo.onprogress = function (p) {
-        if (this.readyState > 2) {
-            el.style.width = ((this.videoWidth / this.videoHeight) * el.clientHeight) + 'px';
-            elBackText.innerText = "已全屏";
-        }
-    };
+        ui.on('layoutChange', this.updateLayout.bind(this));
 
-    el.style.width = '100px';
-    elBackText.innerText = "无视频";
+        this.videosDiv_.appendChild(ui.getRootElement());
+        this.allRemoteElements.push(ui);
 
-    el.addEventListener('click', function () {
-        if (elVideo.src) {
+        if (this.allRemoteElements.length == 1) {
             this.currentFullPageUI = ui;
             this.updateLayout();
-        } else {
-            showAlert("无视频源");
         }
-    }.bind(this));
-
-    elBackground.appendChild(elBackText);
-    elWrapper.appendChild(elVideo);
-    elControl.appendChild(elPeerId);
-    el.appendChild(elBackground);
-    el.appendChild(elWrapper);
-    el.appendChild(elControl);
-    this.videosDiv_.appendChild(el);
-    return {root: el, wrapper: elWrapper, video: elVideo, peerId: elPeerId, backText: elBackText};
-};
-//初始化远程对端面板
-AppController.prototype.initialRemotePeer = function (pc) {
-    if (pc.ui) {
-        return;
-    }
-    var remoteVideo = pc.getRemoteVideo();
-    var ui = pc.ui = {
-        el:        this.createPeerElement(),
-        __proto__: null
-    };
-    ui.el.peerId.innerText = pc.peerId;
-    ui.el.peerId.title = pc.peerId;
-
-    if (remoteVideo) {
-        this.attachVideo(ui, remoteVideo);
-    }
-
-    this.allRemoteElements.push(ui);
-
-    if (this.allRemoteElements.length == 1) {
-        this.currentFullPageUI = ui;
-        this.updateLayout();
     }
 };
-AppController.prototype.destroyRemotePeer = function (pc) {
-    if (!pc.ui) {
-        return;
-    }
-
-    this.videosDiv_.removeChild(pc.ui.el.root);
+AppController.prototype.onRemoteHangup_ = function (pc) {
+    this.displayStatus_('The remote side hung up.');
+    var ui = pc.ui;
+    ui.destroyRemotePeer();
     this.allRemoteElements = this.allRemoteElements.filter(function (r) {
         return r !== pc.ui;
     });
     delete pc.ui;
+    this.updateLayout();
+    this.show_(this.QRbutton_);
 };
-
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     trace('Remote stream added.');
-    if (stream.getVideoTracks().length > 0) {
-        this.attachVideo(pc.ui, stream);
+    if (!pc.ui) {
+        throw new Error("Missing PeerController on PeerConnectionClient");
+    }
+    if (stream.getVideoTracks().length > 0 && !pc.ui.getVideoElement()) {
+        pc.ui.attachVideo(stream);
         this.updateLayout();
     }
 };
 AppController.prototype.onRemoteStreamRemoved = function (pc, stream) {
     trace('Remote stream added.');
-    if (!pc.ui)
-        return;
+    if (!pc.ui) {
+        throw new Error("Missing PeerController on PeerConnectionClient");
+    }
     var ui = pc.ui;
-    if (ui.videoContext && ui.videoContext.stream === stream) {
-        this.detachVideo(ui);
+    if (ui.getVideoStream() === stream) {
+        ui.detachVideo();
         this.updateLayout();
     }
 };
@@ -455,24 +367,6 @@ AppController.prototype.onLocalStreamRemoved = function () {
     this.hide_(this.icons_);
     this.show_(this.QRbutton_);
     this.qrcodeMuteDiv_.style.display = "block";
-};
-
-AppController.prototype.attachLocalStream_ = function () {
-    // Call the polyfill wrapper to attach the media stream to this element.
-    attachMediaStream(this.localVideo_, this.localStream_);
-
-    this.displayStatus_('');
-    this.show_(this.icons_);
-    this.hide_(this.QRbutton_);
-    this.qrcodeMuteDiv_.style.display = "none";
-};
-
-AppController.prototype.transitionToDone_ = function () {
-    this.deactivate_(this.localVideo_);
-    this.hide_(this.hangupSvg_);
-    this.activate_(this.rejoinDiv_);
-    this.show_(this.rejoinDiv_);
-    this.displayStatus_('');
 };
 
 AppController.prototype.onRejoinClick_ = function () {

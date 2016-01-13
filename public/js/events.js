@@ -84,7 +84,7 @@
         }
 
         if (!this._events || !this._events[event]) {
-            console.warn("%O上没有任何%s事件监听器", event);
+            console.warn("%O上没有任何%s事件监听器", this,event);
             return this;
         }
         var extra_arguments = Array.prototype.slice.call(arguments, 1);

@@ -26,6 +26,8 @@ var PeerConnectionClient = function (peerId, call) {
     this.peerId = peerId;
     this.params_ = params;
     this.startTime_ = call.startTime;
+    /** @type PeerController */
+    this.ui = null;
 
     trace('Creating RTCPeerConnnection with:\n' +
         '  config: \'' + JSON.stringify(params.peerConnectionConfig) + '\';\n' +
@@ -39,7 +41,7 @@ var PeerConnectionClient = function (peerId, call) {
     this.pc_.onaddstream = this.onRemoteStreamAdded_.bind(this);
     this.pc_.onremovestream = trace.bind(null, 'Remote stream removed.');
     this.pc_.onsignalingstatechange = this.onSignalingStateChanged_.bind(this);
-    this.pc_.oniceconnectionstatechange =this.onIceConnectionStateChanged_.bind(this);
+    this.pc_.oniceconnectionstatechange = this.onIceConnectionStateChanged_.bind(this);
 
     this.hasRemoteSdp_ = false;
     this.hasLocalSdp_ = false;
@@ -77,7 +79,7 @@ PeerConnectionClient.prototype.addStream = function (stream) {
     }
     this.pc_.addStream(stream);
 
-    if(this.hasLocalSdp_){
+    if (this.hasLocalSdp_) {
         var constraints = PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_;
         this.pc_.createOffer(
             function (sdp) {
@@ -216,10 +218,10 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 return;
             }
 
-            if(this.hasRemoteSdp_){
+            if (this.hasRemoteSdp_) {
                 this.setRemoteSdp_(message.content);
                 this.doAnswer_();
-            }else{
+            } else {
                 if (message.isHelper) {
                     var hasHelper = this.call.hasHelper();
                     if (!hasHelper) {
@@ -332,15 +334,15 @@ PeerConnectionClient.prototype.filterIceCandidate_ = function (candidateObj) {
 
 PeerConnectionClient.prototype.recordIceCandidate_ =
     function (location, candidateObj) {
-        this.emit('newicecandidate',location, candidateObj.candidate);
+        this.emit('newicecandidate', location, candidateObj.candidate);
     };
 
 PeerConnectionClient.prototype.onRemoteStreamAdded_ = function (event) {
-    this.emit('remotestreamadded',this, event.stream);
+    this.emit('remotestreamadded', this, event.stream);
 };
 
 PeerConnectionClient.prototype.onError_ = function (tag, error) {
-    this.emit('error',(tag + ': ' + error.toString()));
+    this.emit('error', (tag + ': ' + error.toString()));
 };
 
 PeerConnectionClient.prototype.getRemoteStreams = function () {
