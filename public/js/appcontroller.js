@@ -139,7 +139,7 @@ AppController.prototype.createCall_ = function () {
         'Alpha-Test');
 
     // TODO(jiayl): replace callbacks with events.
-    this.call_.onremotehangup = this.onRemoteHangup_.bind(this);
+    this.call_.on('remotehangup', this.onRemoteHangup_.bind(this));
     this.call_.on('remotestreamadded', this.onRemoteStreamAdded_.bind(this));
     this.call_.on('localstreamadded', this.onLocalStreamAdded_.bind(this));
     this.call_.on('remoteSdp', this.onRemoteSdp.bind(this));
