@@ -37,7 +37,6 @@ var Call = function (loadingParams) {
 
     this.getMediaPromise_ = null;
     this.getTurnServersPromise_ = null;
-    this.isMediaError_ = true;
 };
 EventEmitter.bindPrototype(Call);
 
@@ -262,7 +261,6 @@ Call.prototype.maybeGetTurnServers_ = function () {
 
 Call.prototype.onUserMediaSuccess_ = function (stream) {
     this.localStream_ = stream;
-    this.getMediaError_ = false;
     if (stream === null)
         console.trace("onUserMediaSuccess stream is null.");
 
@@ -272,7 +270,6 @@ Call.prototype.onUserMediaSuccess_ = function (stream) {
 Call.prototype.onUserMediaError_ = function (error) {
     showAlert('请使用android手机助手！');
     var errorMessage = 'Please use android helper! ';
-    this.isMediaError_ = true;
 };
 
 Call.prototype.getPeerConnection = function (peerId) {
@@ -378,8 +375,21 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         //leave消息
         case 'leave':
             showAlert(msg.id + '退出房间');
-            pc = this.getPeerConnection(msg.id);
-            this.emit('remotehangup', pc);
+            pc = this.peerConnections[msg.id];
+            if(pc.isHelper) {
+                for(var chromePc in this.peerConnections) {
+                    if(this.peerConnections[chromePc].isHelper === false) {
+                        this.peerConnections[chromePc].removeStream(this.peerConnections[chromePc].call.localStream_);
+                    }
+                }
+                this.emit('localstreamremoved', pc);
+                this.closePeer(msg.id);
+            }else {
+                if(pc !== undefined) {
+                    this.emit('remotehangup', pc);
+                    this.closePeer(msg.id);
+                }
+            }
             break;
 
         default:

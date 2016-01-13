@@ -73,40 +73,7 @@ PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_ = {
     }]
 };
 
-PeerConnectionClient.prototype.addStream = function (stream) {
-    if (!this.pc_) {
-        return;
-    }
-    this.pc_.addStream(stream);
-
-    if (this.hasLocalSdp_) {
-        var constraints = PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_;
-        this.pc_.createOffer(
-            function (sdp) {
-                sdp = this.adjustLocalSdpAndNotify(sdp);
-                this.call.send({
-                    cmd:      "offer",
-                    to:       this.peerId,
-                    isHelper: false,
-                    content:  sdp
-                });
-            }.bind(this),
-            this.onError_.bind(this, 'createOffer'),
-            constraints
-        );
-    }
-};
-
-PeerConnectionClient.prototype.startConnection = function () {
-    if (!this.pc_) {
-        return false;
-    }
-
-    if (this.started_) {
-        return false;
-    }
-
-    this.started_ = true;
+PeerConnectionClient.prototype.createOffer_ = function () {
     var constraints = PeerConnectionClient.DEFAULT_SDP_CONSTRAINTS_;
     this.pc_.createOffer(
         function (sdp) {
@@ -122,6 +89,40 @@ PeerConnectionClient.prototype.startConnection = function () {
         this.onError_.bind(this, 'createOffer'),
         constraints
     );
+};
+
+PeerConnectionClient.prototype.addStream = function (stream) {
+    if (!this.pc_) {
+        return;
+    }
+    this.pc_.addStream(stream);
+
+    if (this.hasLocalSdp_) {
+        this.createOffer_();
+    }
+};
+
+PeerConnectionClient.prototype.removeStream = function (stream) {
+
+    if (!this.pc_) {
+        return;
+    }
+    this.pc_.removeStream(stream);
+
+    this.createOffer_();
+};
+
+PeerConnectionClient.prototype.startConnection = function () {
+    if (!this.pc_) {
+        return false;
+    }
+
+    if (this.started_) {
+        return false;
+    }
+
+    this.started_ = true;
+    this.createOffer_();
 
     return true;
 };
