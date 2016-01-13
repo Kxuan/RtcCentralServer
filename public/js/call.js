@@ -53,7 +53,8 @@ Call.prototype.start = function (roomId) {
         this.params_.peerConnectionConstraints = JSON.parse(params.pc_constraints);
 
         this.channel_ = new SignalingChannel(params.wss_url);
-        this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
+        //this.channel_.onmessage = this.onRecvSignalingChannelMessage_.bind(this);
+        this.channel_.on('message',this.onRecvSignalingChannelMessage_.bind(this));
 
         this.requestMediaAndTurnServers_();
         this.connectToRoom_(roomId);

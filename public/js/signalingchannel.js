@@ -25,6 +25,7 @@ var SignalingChannel = function (wssUrl) {
     this.onerror = null;
     this.onmessage = null;
 };
+EventEmitter.bindPrototype(SignalingChannel);
 
 SignalingChannel.prototype.open = function () {
     if (this.websocket_) {
@@ -67,7 +68,8 @@ SignalingChannel.prototype.open = function () {
                 trace('Failed to parse WSS message: ' + event.data);
                 return;
             }
-            this.onmessage(message);
+            //this.onmessage(message);
+            this.emit('message',message);
         }.bind(this);
 
         this.websocket_.onerror = function () {
