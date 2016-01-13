@@ -142,6 +142,7 @@ AppController.prototype.createCall_ = function () {
     this.call_.on('remotehangup', this.onRemoteHangup_.bind(this));
     this.call_.on('remotestreamadded', this.onRemoteStreamAdded_.bind(this));
     this.call_.on('localstreamadded', this.onLocalStreamAdded_.bind(this));
+    this.call_.on('localstreamremoved', this.onLocalStreamRemoved.bind(this));
     this.call_.on('remoteSdp', this.onRemoteSdp.bind(this));
 
     this.call_.on('signalingstatechange',
@@ -279,6 +280,12 @@ AppController.prototype.updateLayout = function () {
         this.show_(this.sharingDiv_);
     }
 
+    //本地流
+    if (this.localStream_) {
+        this.show_(this.icons_);
+    } else {
+        this.hide_(this.icons_);
+    }
 };
 
 AppController.prototype.attachLocalStream_ = function () {
@@ -286,7 +293,7 @@ AppController.prototype.attachLocalStream_ = function () {
     attachMediaStream(this.localVideo_, this.localStream_);
 
     this.displayStatus_('');
-    this.show_(this.icons_);
+    this.updateLayout();
     this.hide_(this.QRbutton_);
     this.qrcodeMuteDiv_.style.display = "none";
 };
@@ -318,6 +325,9 @@ AppController.prototype.onRemoteSdp = function (pc) {
 AppController.prototype.onRemoteHangup_ = function (pc) {
     this.displayStatus_('The remote side hung up.');
     var ui = pc.ui;
+    if (!ui) {
+        return;
+    }
     ui.destroyRemotePeer();
     this.allRemoteElements = this.allRemoteElements.filter(function (r) {
         return r !== pc.ui;
@@ -331,7 +341,7 @@ AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     if (!pc.ui) {
         throw new Error("Missing PeerController on PeerConnectionClient");
     }
-    if (stream.getVideoTracks().length > 0 && !pc.ui.getVideoElement()) {
+    if (stream.getVideoTracks().length > 0 && !pc.ui.getVideoStream()) {
         pc.ui.attachVideo(stream);
         this.updateLayout();
     }
@@ -361,10 +371,13 @@ AppController.prototype.onLocalStreamRemoved = function () {
     trace("Local stream removed");
     this.localStream_ = null;
 
-    attachMediaStream(this.localVideo_, null);
+    this.localVideo_.src = '';
 
+    if (this.allRemoteElements.length > 0 && this.currentFullPageUI === null) {
+        this.currentFullPageUI = this.allRemoteElements[0];
+    }
     this.displayStatus_('');
-    this.hide_(this.icons_);
+    this.updateLayout();
     this.show_(this.QRbutton_);
     this.qrcodeMuteDiv_.style.display = "block";
 };
