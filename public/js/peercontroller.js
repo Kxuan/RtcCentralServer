@@ -9,7 +9,6 @@ function PeerController(pc) {
     if (pc.ui) {
         throw new Error("Duplicate PeerController on same PeerConnectionClient");
     }
-    pc.ui = this;
     var remoteVideo = pc.getRemoteVideo();
     this.el = this.createPeerElement();
     this.el.peerId.innerText = pc.peerId;
@@ -81,7 +80,6 @@ PeerController.prototype.destroyRemotePeer = function () {
         }
     }
 };
-
 
 //创建对端HTML面板
 PeerController.prototype.createPeerElement = function () {

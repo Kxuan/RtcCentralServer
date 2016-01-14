@@ -69,6 +69,7 @@ var AppController = function (loadingParams) {
     this.QRbutton_ = $(UI_CONSTANTS.QRbutton);
     this.qrcodeMuteDiv_ = $(UI_CONSTANTS.qrcodeMuteDiv);
     this.qrcodeShareDiv_ = $(UI_CONSTANTS.qrcodeShareDiv);
+    enableAutoHiddenAfterFadeOut(this.qrcodeShareDiv_);
 
 
     this.newRoomButton_.addEventListener('click',
@@ -162,18 +163,18 @@ AppController.prototype.showRoomSelection_ = function () {
     this.roomSelection_ = new RoomSelection(roomSelectionDiv, UI_CONSTANTS);
     this.show_(roomSelectionDiv);
     /*this.roomSelection_.onRoomSelected = function (roomName) {
-        this.hide_(roomSelectionDiv);
-        this.createCall_();
-        this.finishCallSetup_(roomName);
-        this.show_(this.QRbutton_);
-        this.qrcodeMuteDiv_.style.display = "block";
+     this.hide_(roomSelectionDiv);
+     this.createCall_();
+     this.finishCallSetup_(roomName);
+     this.show_(this.QRbutton_);
+     this.qrcodeMuteDiv_.style.display = "block";
 
-        this.roomSelection_ = null;
-        if (this.localStream_) {
-            this.attachLocalStream_();
-        }
-    }.bind(this);*/
-    this.roomSelection_.on('RoomSelected',function (roomName) {
+     this.roomSelection_ = null;
+     if (this.localStream_) {
+     this.attachLocalStream_();
+     }
+     }.bind(this);*/
+    this.roomSelection_.on('RoomSelected', function (roomName) {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
@@ -241,7 +242,7 @@ AppController.prototype.setVideoFullpage = function (el) {
     }
 };
 AppController.prototype.setVideoMini = function (el, parent) {
-    if (el.parentElement != parent) {
+    if (el.parentElement == this.fullpageWrapper) {
         this.fullpageWrapper.removeChild(el);
         parent.insertBefore(el, parent.firstElementChild);
         reattachMediaStream(el, el);
@@ -271,9 +272,9 @@ AppController.prototype.updateLayout = function () {
 
     //如果有不能播放的远程视频或者远程视频不止1个，则显示远程视频栏
     if (countPlayableVideo != this.allRemoteElements.length || this.allRemoteElements.length > 1) {
-        this.videosDiv_.classList.remove('hide');
+        this.videosDiv_.classList.remove('hidden');
     } else {
-        this.videosDiv_.classList.add('hide');
+        this.videosDiv_.classList.add('hidden');
     }
 
     //如果此时有远程视频源，则显示挂断按钮
@@ -350,7 +351,7 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
 };
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     trace('Remote stream added.');
-                                                                                                                          };
+};
 AppController.prototype.onRemoteStreamRemoved = function (pc, stream) {
     trace('Remote stream added.');
 };
@@ -487,11 +488,9 @@ AppController.prototype.onKeyPress_ = function (event) {
 };
 
 AppController.prototype.pushCallNavigation_ = function (roomId, roomLink) {
-    if (!isChromeApp()) {
         window.history.pushState({'roomId': roomId, 'roomLink': roomLink},
             roomId,
             roomLink);
-    }
 };
 
 AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {
@@ -517,46 +516,14 @@ AppController.prototype.displayError_ = function (error) {
 };
 
 AppController.prototype.toggleQrcodeRoom_ = function () {
-    var intTimeStep = 20;
-    var intAlphaStep = 0.05;
-    var curSObj = null;
-    var curOpacity = null;
-
-    curSObj = this.qrcodeShareDiv_;
-
-    setObjState();
-
-    function setObjState() {
-        if (!curSObj.classList.contains('hidden')) {
-            curOpacity = 1;
-            setObjClose();
-        }
-        else {
-            curSObj.style.opacity = 0;
-            curSObj.classList.remove('hidden');
-            curOpacity = 0;
-            setObjOpen();
-        }
+    var result = this.roomQrcodeIconSet_.toggle();
+    this.qrcodeShareDiv_.classList.remove('hidden');
+    +this.qrcodeShareDiv_.clientWidth;
+    if (result) {
+        this.qrcodeShareDiv_.classList.remove('fadeOut');
+    } else {
+        this.qrcodeShareDiv_.classList.add('fadeOut');
     }
-
-    function setObjOpen() {
-        curOpacity += intAlphaStep;
-        curSObj.style.opacity = curOpacity;
-        if (curOpacity < 1) setTimeout(setObjOpen, intTimeStep);
-    }
-
-    function setObjClose() {
-        curOpacity -= intAlphaStep;
-        if (curOpacity > 0) {
-            curSObj.style.opacity = curOpacity;
-            setTimeout(setObjClose, intTimeStep);
-        }
-        else {
-            curSObj.classList.add('hidden');
-        }
-    }
-
-    this.roomQrcodeIconSet_.toggle();
 };
 
 AppController.prototype.toggleAudioMute_ = function () {
@@ -580,30 +547,6 @@ AppController.prototype.toggleFullScreen_ = function () {
     this.fullscreenIconSet_.toggle();
 };
 
-AppController.prototype.hide_ = function (element) {
-    element.classList.add('hidden');
-};
-
-AppController.prototype.show_ = function (element) {
-    element.classList.remove('hidden');
-};
-
-AppController.prototype.activate_ = function (element) {
-    element.classList.add('active');
-};
-
-AppController.prototype.deactivate_ = function (element) {
-    element.classList.remove('active');
-};
-
-AppController.prototype.showIcons_ = function () {
-    if (!this.icons_.classList.contains('active')) {
-        this.activate_(this.icons_);
-        setTimeout(function () {
-            this.deactivate_(this.icons_);
-        }.bind(this), 5000);
-    }
-};
 
 AppController.prototype.loadUrlParams_ = function () {
     //通过URL解析进入的房间号
@@ -632,6 +575,30 @@ AppController.prototype.loadUrlParams_ = function () {
     /* jshint ignore:end */
 };
 
+AppController.prototype.hide_ = function (element) {
+    element.classList.add('hidden');
+};
+
+AppController.prototype.show_ = function (element) {
+    element.classList.remove('hidden');
+};
+
+AppController.prototype.activate_ = function (element) {
+    element.classList.add('active');
+};
+
+AppController.prototype.deactivate_ = function (element) {
+    element.classList.remove('active');
+};
+AppController.prototype.showIcons_ = function () {
+    if (!this.icons_.classList.contains('active')) {
+        this.activate_(this.icons_);
+        setTimeout(function () {
+            this.deactivate_(this.icons_);
+        }.bind(this), 5000);
+    }
+};
+
 AppController.IconSet_ = function (iconSelector) {
     this.iconElement = document.querySelector(iconSelector);
 };
@@ -640,8 +607,10 @@ AppController.IconSet_.prototype.toggle = function () {
     if (this.iconElement.classList.contains('on')) {
         this.iconElement.classList.remove('on');
         // turn it off: CSS hides `svg path.on` and displays `svg path.off`
+        return false;
     } else {
         // turn it on: CSS displays `svg.on path.on` and hides `svg.on path.off`
         this.iconElement.classList.add('on');
+        return true;
     }
 };

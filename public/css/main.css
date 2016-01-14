@@ -73,12 +73,6 @@ div.warning {
 }
 
 #videos {
-    font-size: 0; /* to fix whitespace/scrollbars problem */
-    height: 100%;
-    pointer-events: none;
-    position: absolute;
-    transition: all 1s;
-    width: 100%;
 }
 
 #videos.active {
@@ -135,10 +129,11 @@ video {
 }
 
 #videos {
-    display: none;
+    font-size: 0; /* to fix whitespace/scrollbars problem */
     position: fixed;
     bottom: 0;
-    height: 200px;
+    height: 154px;
+    width: 100%;
     background: rgba(0, 0, 0, 0.6);
     text-align: right;
 }
@@ -515,4 +510,14 @@ svg:hover {
     height: 250px;
     background-color: #4285F4;
     padding-top: 30px;
+
+    opacity: 1;
+    -webkit-transition: opacity 0.5s;
+    -moz-transition: opacity 0.5s;
+    -o-transition: opacity 0.5s;
+    transition: opacity 0.5s;
+}
+
+#qrcodeShareDiv.fadeOut{
+    opacity: 0;
 }
