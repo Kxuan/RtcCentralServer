@@ -272,9 +272,9 @@ AppController.prototype.updateLayout = function () {
 
     //如果有不能播放的远程视频或者远程视频不止1个，则显示远程视频栏
     if (countPlayableVideo != this.allRemoteElements.length || this.allRemoteElements.length > 1) {
-        this.videosDiv_.classList.remove('hide');
+        this.videosDiv_.classList.remove('hidden');
     } else {
-        this.videosDiv_.classList.add('hide');
+        this.videosDiv_.classList.add('hidden');
     }
 
     //如果此时有远程视频源，则显示挂断按钮
