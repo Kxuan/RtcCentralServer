@@ -109,7 +109,6 @@ var AppController = function (loadingParams) {
         }
         var confirmJoinDiv = $(UI_CONSTANTS.confirmJoinDiv);
         this.show_(confirmJoinDiv);
-        //this.hide_(this.QRbutton_);;
 
         $(UI_CONSTANTS.confirmJoinButton).onclick = function () {
             this.hide_(confirmJoinDiv);
@@ -120,7 +119,7 @@ var AppController = function (loadingParams) {
             this.finishCallSetup_(this.loadingParams_.roomId);
 
             this.show_(this.QRbutton_);
-            this.qrcodeMuteDiv_.style.display = "block"
+            this.qrcodeMuteDiv_.style.display = "block";
 
         }.bind(this);
 
@@ -162,28 +161,18 @@ AppController.prototype.showRoomSelection_ = function () {
     var roomSelectionDiv = $(UI_CONSTANTS.roomSelectionDiv);
     this.roomSelection_ = new RoomSelection(roomSelectionDiv, UI_CONSTANTS);
     this.show_(roomSelectionDiv);
-    /*this.roomSelection_.onRoomSelected = function (roomName) {
-     this.hide_(roomSelectionDiv);
-     this.createCall_();
-     this.finishCallSetup_(roomName);
-     this.show_(this.QRbutton_);
-     this.qrcodeMuteDiv_.style.display = "block";
 
-     this.roomSelection_ = null;
-     if (this.localStream_) {
-     this.attachLocalStream_();
-     }
-     }.bind(this);*/
     this.roomSelection_.on('RoomSelected', function (roomName) {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
-        this.show_(this.QRbutton_);
-        this.qrcodeMuteDiv_.style.display = "block";
 
         this.roomSelection_ = null;
         if (this.localStream_) {
             this.attachLocalStream_();
+        }else {
+            this.show_(this.QRbutton_);
+            this.qrcodeMuteDiv_.style.display = "block";
         }
     }.bind(this));
 };
@@ -207,7 +196,6 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     // Chrome apps can't use onbeforeunload.
     window.onbeforeunload = function () {
         this.call_.hangup();
-        this.show_(this.QRbutton_);
     }.bind(this);
 
     window.onpopstate = function (event) {
@@ -353,7 +341,9 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
     });
     delete pc.ui;
     this.updateLayout();
-    this.show_(this.QRbutton_);
+
+    if(pc.isHelper)
+        this.show_(this.QRbutton_);
 };
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     trace('Remote stream added.');
