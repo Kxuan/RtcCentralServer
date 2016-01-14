@@ -515,4 +515,14 @@ svg:hover {
     height: 250px;
     background-color: #4285F4;
     padding-top: 30px;
+
+    opacity: 1;
+    -webkit-transition: opacity 0.5s;
+    -moz-transition: opacity 0.5s;
+    -o-transition: opacity 0.5s;
+    transition: opacity 0.5s;
+}
+
+#qrcodeShareDiv.fadeOut{
+    opacity: 0;
 }
