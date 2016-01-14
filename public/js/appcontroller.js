@@ -325,6 +325,12 @@ AppController.prototype.onRemoteSdp = function (pc) {
         ui = pc.ui = new PeerController(pc);
 
         ui.on('layoutChange', this.updateLayout.bind(this));
+        ui.on('requestFullpage', function () {
+            if (this.currentFullPageUI != ui) {
+                this.currentFullPageUI = ui;
+                this.updateLayout();
+            }
+        }.bind(this));
 
         this.videosDiv_.appendChild(ui.getRootElement());
         this.allRemoteElements.push(ui);
@@ -488,9 +494,9 @@ AppController.prototype.onKeyPress_ = function (event) {
 };
 
 AppController.prototype.pushCallNavigation_ = function (roomId, roomLink) {
-        window.history.pushState({'roomId': roomId, 'roomLink': roomLink},
-            roomId,
-            roomLink);
+    window.history.pushState({'roomId': roomId, 'roomLink': roomLink},
+        roomId,
+        roomLink);
 };
 
 AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {

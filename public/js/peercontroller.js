@@ -119,8 +119,7 @@ PeerController.prototype.createPeerElement = function () {
 
     el.addEventListener('click', function () {
         if (elVideo.src) {
-            this.currentFullPageUI = ui;
-            this.updateLayout();
+            this.emit('requestFullpage');
         } else {
             showAlert("无视频源");
         }
