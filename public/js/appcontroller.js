@@ -247,14 +247,14 @@ AppController.prototype.updateLayout = function () {
     //遍历所有远程视频标签，
     // 该全屏的全屏，不该全屏的缩小掉
     this.allRemoteElements.forEach(function (ui) {
+        var video = ui.getVideoElement();
+        if (video && video.readyState > 2) {
+            countPlayableVideo++;
+        }
         if (ui === this.currentFullPageUI) {
             this.setVideoFullpage(ui.getVideoElement(), ui.getVideoWrapper());
         } else {
             this.setVideoMini(ui.getVideoElement(), ui.getVideoWrapper());
-        }
-        var video = ui.getVideoElement();
-        if (video && video.readyState > 2) {
-            countPlayableVideo++;
         }
     }.bind(this));
 

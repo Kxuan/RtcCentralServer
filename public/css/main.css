@@ -152,7 +152,7 @@ video {
 #fullpage-wrapper video {
     height: 100%;
     width: 100%;
-    object-fit: cover; /* no letterboxing */
+    /* object-fit: cover; *//* no letterboxing */
     transition: opacity 1s;
     -moz-transform: scale(-1, 1);
     -ms-transform: scale(-1, 1);
