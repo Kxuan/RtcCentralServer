@@ -111,7 +111,20 @@ Call.prototype.closePeer = function (uid) {
         return;
     }
 
-    this.peerConnections[uid].close();
+    var pc = this.peerConnections[uid];
+    if(pc.isHelper) {
+        for(var chromePc in this.peerConnections) {
+            if(this.peerConnections[chromePc].isHelper === false) {
+                this.peerConnections[chromePc].removeStream(this.localStream_);
+            }
+        }
+        this.localStream_ = null;
+        this.emit('localstreamremoved', pc);
+    }else {
+            this.emit('remotehangup', pc);
+    }
+
+    pc.close();
     delete this.peerConnections[uid];
 
 };
@@ -294,6 +307,7 @@ Call.prototype.getPeerConnection = function (peerId) {
         pc.on('iceconnectionstatechange', this.emit.bind(this, 'iceconnectionstatechange'));
         pc.on('newicecandidate', this.emit.bind(this, 'newicecandidate'));
         pc.on('error', this.emit.bind(this, 'error'));
+        pc.on('close',this.closePeer.bind(this,peerId));
         trace('Created PeerConnectionClient');
         return pc;
     } catch (e) {
@@ -376,20 +390,9 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         case 'leave':
             showAlert(msg.id + '退出房间');
             pc = this.peerConnections[msg.id];
-            if(pc.isHelper) {
-                for(var chromePc in this.peerConnections) {
-                    if(this.peerConnections[chromePc].isHelper === false) {
-                        this.peerConnections[chromePc].removeStream(this.peerConnections[chromePc].call.localStream_);
-                    }
-                }
-                this.emit('localstreamremoved', pc);
-                this.closePeer(msg.id);
-            }else {
-                if(pc !== undefined) {
-                    this.emit('remotehangup', pc);
-                    this.closePeer(msg.id);
-                }
-            }
+            if(pc)
+                pc.close();
+
             break;
 
         default:

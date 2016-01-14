@@ -309,6 +309,13 @@ PeerConnectionClient.prototype.onIceConnectionStateChanged_ = function () {
         return;
     }
     trace('ICE connection state changed to: ' + this.pc_.iceConnectionState);
+    if( this.pc_.iceConnectionState === 'failed' ||
+        this.pc_.iceConnectionState === 'closed' ||
+        this.pc_.iceConnectionState === 'disconnected') {
+
+        this.close();
+    }else
+
     if (this.pc_.iceConnectionState === 'completed') {
         trace('ICE complete time: ' +
             (window.performance.now() - this.startTime_).toFixed(0) + 'ms.');
