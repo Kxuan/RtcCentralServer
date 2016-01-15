@@ -177,7 +177,7 @@ function enableAutoHiddenAfterFadeOut(el) {
 }
 //连接之后无摄像头和麦克风的二维码
 //android版手机助手的二维码绘制
-function showQrcode(qrCanvas, qrRoom, qrMaster) {
+function showHelperQrcode(qrCanvas, qrRoom, qrMaster) {
     var myValue = location.origin + '/android/?room=' + qrRoom + '&master=' + qrMaster;
     return qr.canvas({
         canvas: qrCanvas,
@@ -198,7 +198,7 @@ function showAlert(aleString) {
 }
 
 //未连入新房间的二维码
-function showJoinQrcode(qrCanvas) {
+function showRoomQrcode(qrCanvas) {
     var joinValue = location.origin + location.pathname;
     return qr.canvas({
         canvas: qrCanvas,

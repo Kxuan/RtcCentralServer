@@ -404,16 +404,29 @@ svg:hover {
     transform: translateX(0);
 }
 
-#roomQrcode {
+#qrcode-room {
     transition: 20ms;
 }
 
-#roomQrcode:hover,
-#roomQrcode.on {
+#qrcode-helper:hover,
+#qrcode-helper.on {
+    background: #FF4F0B;
+}
+
+#qrcode-helper:hover circle {
+    fill: #FF4F0B;
+}
+
+#qrcode-helper {
+    transition: 20ms;
+}
+
+#qrcode-room:hover,
+#qrcode-room.on {
     background: #008B00;
 }
 
-#roomQrcode:hover circle {
+#qrcode-room:hover circle {
     fill: #008B00;
 }
 
@@ -482,15 +495,15 @@ svg:hover {
 
 /*////// icons CSS end /////////////////////////*/
 
-/*/////  QRcode CSS start  ////////////////////*/
+/*/////  qrcodeHelper CSS start  ////////////////////*/
 
-#QRcode {
+#qrcodeHelper {
     position: absolute;
     right: 0;
     bottom: 62px
 }
 
-#qrcodeMuteDiv {
+#qrcodeHelper-Div {
     position: fixed;
     left: 40%;
     top: 35%;
@@ -498,10 +511,16 @@ svg:hover {
     width: 250px;
     height: 250px;
     background-color: #4285F4;
+
+    opacity: 1;
+    -webkit-transition: opacity 0.5s;
+    -moz-transition: opacity 0.5s;
+    -o-transition: opacity 0.5s;
+    transition: opacity 0.5s;
 }
 
-/*/////  QRcode CSS end  //////////////////////*/
-#qrcodeShareDiv {
+/*/////  qrcodeHelper CSS end  //////////////////////*/
+#qrcodeRoom-Div {
     position: fixed;
     left: calc(7vw + 48px);
     top: 40%;
@@ -518,6 +537,6 @@ svg:hover {
     transition: opacity 0.5s;
 }
 
-#qrcodeShareDiv.fadeOut{
-    opacity: 0;
+.fadeOut {
+    opacity: 0 !important;
 }

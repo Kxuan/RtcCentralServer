@@ -59,8 +59,8 @@ Call.prototype.start = function (roomId) {
         this.requestMediaAndTurnServers_();
         this.connectToRoom_(roomId);
 
-        showJoinQrcode(document.getElementById('qrcodeShareCanvas'));
-        showQrcode(document.getElementById('qrcodeMuteCanvas'), this.params_.room_id, this.params_.client_id);
+        showRoomQrcode(document.getElementById('qrcodeRoomCanvas'));
+        showHelperQrcode(document.getElementById('qrcodeHelperCanvas'), this.params_.room_id, this.params_.client_id);
     }.bind(this));
 };
 

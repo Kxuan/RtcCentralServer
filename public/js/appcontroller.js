@@ -26,7 +26,7 @@ var UI_CONSTANTS = {
     infoDiv:                   '#info-div',
     localVideo:                '#local-video',
     localVideoWrapper:         '#local-video-wrapper',
-    roomQrcodeSvg:             '#roomQrcode',
+    qrcodeRoomSvg:             '#qrcode-room',
     muteAudioSvg:              '#mute-audio',
     muteVideoSvg:              '#mute-video',
     newRoomButton:             '#new-room-button',
@@ -42,9 +42,9 @@ var UI_CONSTANTS = {
     sharingDiv:                '#sharing-div',
     statusDiv:                 '#status-div',
     videosDiv:                 '#videos',
-    QRbutton:                  '#QRcode',
-    qrcodeMuteDiv:             '#qrcodeMuteDiv',
-    qrcodeShareDiv:            '#qrcodeShareDiv'
+    qrcodeHelperSvg:              '#qrcode-helper',
+    qrcodeHelperDiv:           '#qrcodeHelper-Div',
+    qrcodeRoomDiv:             '#qrcodeRoom-Div'
 };
 
 // The controller that connects the Call with the UI.
@@ -66,28 +66,30 @@ var AppController = function (loadingParams) {
     this.rejoinDiv_ = $(UI_CONSTANTS.rejoinDiv);
     this.rejoinButton_ = $(UI_CONSTANTS.rejoinButton);
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
-    this.QRbutton_ = $(UI_CONSTANTS.QRbutton);
-    this.qrcodeMuteDiv_ = $(UI_CONSTANTS.qrcodeMuteDiv);
-    this.qrcodeShareDiv_ = $(UI_CONSTANTS.qrcodeShareDiv);
-    enableAutoHiddenAfterFadeOut(this.qrcodeShareDiv_);
+    this.qrcodeHelper_ = $(UI_CONSTANTS.qrcodeHelper);
+    this.qrcodeHelperDiv_ = $(UI_CONSTANTS.qrcodeHelperDiv);
+    this.qrcodeRoomDiv_ = $(UI_CONSTANTS.qrcodeRoomDiv);
+    enableAutoHiddenAfterFadeOut(this.qrcodeRoomDiv_);
+    enableAutoHiddenAfterFadeOut(this.qrcodeHelperDiv_);
 
 
     this.newRoomButton_.addEventListener('click',
         this.onNewRoomClick_.bind(this), false);
     this.rejoinButton_.addEventListener('click',
         this.onRejoinClick_.bind(this), false);
-    this.QRbutton_.addEventListener('click',
-        this.onQRcodeClick_.bind(this), false);
+    /*this.qrcodeHelper_.addEventListener('click',
+        this.onQRcodeClick_.bind(this), false);*/
 
+    this.qrcodeHelperIconSet_ =
+        new AppController.IconSet_(UI_CONSTANTS.qrcodeHelperSvg);
     this.roomQrcodeIconSet_ =
-        new AppController.IconSet_(UI_CONSTANTS.roomQrcodeSvg);
+        new AppController.IconSet_(UI_CONSTANTS.qrcodeRoomSvg);
     this.muteAudioIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.muteAudioSvg);
     this.muteVideoIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.muteVideoSvg);
     this.fullscreenIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.fullscreenSvg);
-
 
     this.roomLink_ = '';
     this.roomSelection_ = null;
@@ -118,8 +120,8 @@ var AppController = function (loadingParams) {
             recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
             this.finishCallSetup_(this.loadingParams_.roomId);
 
-            this.show_(this.QRbutton_);
-            this.qrcodeMuteDiv_.style.display = "block";
+
+            this.qrcodeRoomDiv_.classList.remove('hidden');
 
         }.bind(this);
 
@@ -166,13 +168,13 @@ AppController.prototype.showRoomSelection_ = function () {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
+        //this.show_(this.qrcodeHelper_);
+        //this.qrcodeHelperDiv_.style.display = "block";
+        this.qrcodeRoomDiv_.classList.remove('hidden');
 
         this.roomSelection_ = null;
         if (this.localStream_) {
             this.attachLocalStream_();
-        }else {
-            this.show_(this.QRbutton_);
-            this.qrcodeMuteDiv_.style.display = "block";
         }
     }.bind(this));
 };
@@ -183,7 +185,8 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     document.onkeypress = this.onKeyPress_.bind(this);
     window.onmousemove = this.showIcons_.bind(this);
 
-    $(UI_CONSTANTS.roomQrcodeSvg).onclick = this.toggleQrcodeRoom_.bind(this);
+    $(UI_CONSTANTS.qrcodeHelperSvg).onclick = this.toggleQrcodeHelper_.bind(this);
+    $(UI_CONSTANTS.qrcodeRoomSvg).onclick = this.toggleQrcodeRoom_.bind(this);
     $(UI_CONSTANTS.muteAudioSvg).onclick = this.toggleAudioMute_.bind(this);
     $(UI_CONSTANTS.muteVideoSvg).onclick = this.toggleVideoMute_.bind(this);
     $(UI_CONSTANTS.fullscreenSvg).onclick = this.toggleFullScreen_.bind(this);
@@ -295,8 +298,8 @@ AppController.prototype.attachLocalStream_ = function () {
 
     this.displayStatus_('');
     this.updateLayout();
-    this.hide_(this.QRbutton_);
-    this.qrcodeMuteDiv_.style.display = "none";
+    //this.hide_(this.qrcodeHelper_);
+    //this.qrcodeHelperDiv_.style.display = "none";
 };
 
 AppController.prototype.transitionToDone_ = function () {
@@ -341,9 +344,6 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
     });
     delete pc.ui;
     this.updateLayout();
-
-    if(pc.isHelper)
-        this.show_(this.QRbutton_);
 };
 AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
     trace('Remote stream added.');
@@ -372,8 +372,9 @@ AppController.prototype.onLocalStreamRemoved = function () {
     }
     this.displayStatus_('');
     this.updateLayout();
-    this.show_(this.QRbutton_);
-    this.qrcodeMuteDiv_.style.display = "block";
+    //this.show_(this.qrcodeHelper_);
+    //this.qrcodeHelperDiv_.style.display = "block";
+    this.qrcodeRoomDiv_.classList.remove('hidden');
 };
 
 AppController.prototype.onRejoinClick_ = function () {
@@ -388,65 +389,18 @@ AppController.prototype.onNewRoomClick_ = function () {
     this.showRoomSelection_();
 };
 
-AppController.prototype.onQRcodeClick_ = function () {
-    var intTimeStep = 20;
-    var isIe = (window.ActiveXObject) ? true : false;
-    var intAlphaStep = (isIe) ? 5 : 0.05;
-    var curSObj = null;
-    var curOpacity = null;
-
-    curSObj = this.qrcodeMuteDiv_;
-
-    setObjState();
-
-    function setObjState() {
-        if (curSObj.style.display == "block") {
-            curOpacity = 1;
-            setObjClose();
-        }
-        else {
-            if (isIe) {
-                curSObj.style.cssText = 'DISPLAY: none;Z-INDEX: 1; FILTER: alpha(opacity=0); POSITION: absolute;';
-                curSObj.filters.alpha.opacity = 0;
-            } else {
-                curSObj.style.opacity = 0
-            }
-            curSObj.style.display = 'block';
-            curOpacity = 0;
-            setObjOpen();
-        }
-    }
-
-    function setObjOpen() {
-        if (isIe) {
-            curSObj.filters.alpha.opacity += intAlphaStep;
-            if (curSObj.filters.alpha.opacity < 100) setTimeout(setObjOpen, intTimeStep);
-        } else {
-            curOpacity += intAlphaStep;
-            curSObj.style.opacity = curOpacity;
-            if (curOpacity < 1) setTimeout(setObjOpen, intTimeStep);
-        }
-    }
-
-    function setObjClose() {
-        if (isIe) {
-            curSObj.filters.alpha.opacity -= intAlphaStep;
-            if (curSObj.filters.alpha.opacity > 0) {
-                setTimeout(setObjClose(), intTimeStep);
-            }
-            else {
-                curSObj.style.display = "none";
-            }
-        } else {
-            curOpacity -= intAlphaStep;
-            if (curOpacity > 0) {
-                curSObj.style.opacity = curOpacity;
-                setTimeout(setObjClose(), intTimeStep);
-            }
-            else {
-                curSObj.style.display = 'none';
-            }
-        }
+//gaizao
+AppController.prototype.toggleQrcodeHelper_ = function () {
+    result = this.qrcodeHelperIconSet_.toggle();
+    //var result = this.qrcodeHelperDiv_.style.display;
+    this.qrcodeHelperDiv_.classList.remove('hidden');
+    +this.qrcodeHelperDiv_.clientWidth;
+    if (!result) {
+        this.qrcodeHelperDiv_.classList.remove('fadeOut');
+        //this.qrcodeHelperDiv_.style.display = 'block';
+    } else {
+        this.qrcodeHelperDiv_.classList.add('fadeOut');
+        //this.qrcodeHelperDiv_.style.display = 'none';
     }
 };
 
@@ -513,12 +467,12 @@ AppController.prototype.displayError_ = function (error) {
 
 AppController.prototype.toggleQrcodeRoom_ = function () {
     var result = this.roomQrcodeIconSet_.toggle();
-    this.qrcodeShareDiv_.classList.remove('hidden');
-    +this.qrcodeShareDiv_.clientWidth;
+    this.qrcodeRoomDiv_.classList.remove('hidden');
+    +this.qrcodeRoomDiv_.clientWidth;
     if (result) {
-        this.qrcodeShareDiv_.classList.remove('fadeOut');
+        this.qrcodeRoomDiv_.classList.remove('fadeOut');
     } else {
-        this.qrcodeShareDiv_.classList.add('fadeOut');
+        this.qrcodeRoomDiv_.classList.add('fadeOut');
     }
 };
 
