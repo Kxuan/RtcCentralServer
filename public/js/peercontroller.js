@@ -17,6 +17,7 @@ function PeerController(pc) {
     if (remoteVideo) {
         this.attachVideo(remoteVideo);
     }
+    this.on('videoResize', this.onVideoResize);
     pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this));
     pc.on('remotestreamremoved', this.onRemoteStreamRemoved.bind(this));
 }
@@ -81,17 +82,21 @@ PeerController.prototype.destroyRemotePeer = function () {
     }
 };
 
+PeerController.prototype.onVideoResize = function (width, height, elVideo) {
+
+    this.emit('layoutChange');
+};
 //创建对端HTML面板
 PeerController.prototype.createPeerElement = function () {
     var self = this;
 
-    var el = document.createElement('div'),
+    var el           = document.createElement('div'),
         elBackground = document.createElement('div'),
-        elBackText = document.createElement('div'),
-        elWrapper = document.createElement('div'),
-        elVideo = document.createElement('video'),
-        elControl = document.createElement('div'),
-        elPeerId = document.createElement('a');
+        elBackText   = document.createElement('div'),
+        elWrapper    = document.createElement('div'),
+        elVideo      = document.createElement('video'),
+        elControl    = document.createElement('div'),
+        elPeerId     = document.createElement('a');
     el.className = 'peer';
     elBackground.className = 'background';
     elBackText.className = 'background-text';
@@ -107,10 +112,10 @@ PeerController.prototype.createPeerElement = function () {
             if (this.videoWidth != oldWidth || this.videoHeight != oldHeight) {
                 oldWidth = this.videoWidth;
                 oldHeight = this.videoHeight;
-                self.emit("layoutChange");
+                self.emit("videoResize", oldWidth, oldHeight, elVideo);
+                elBackText.innerText = "已全屏";
+                el.style.width = ((this.videoWidth / this.videoHeight) * el.clientHeight) + 'px';
             }
-            el.style.width = ((this.videoWidth / this.videoHeight) * el.clientHeight) + 'px';
-            elBackText.innerText = "已全屏";
         }
     };
 
