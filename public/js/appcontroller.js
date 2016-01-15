@@ -46,7 +46,8 @@ var UI_CONSTANTS = {
     roomSelectionRecentList:   '#recent-rooms-list',
     sharingDiv:                '#sharing-div',
     statusDiv:                 '#status-div',
-    videosDiv:                 '#videos'
+    videosDiv:                 '#videos',
+    localIdDiv:                '#localIdDiv'
 };
 
 // The controller that connects the Call with the UI.
@@ -73,6 +74,7 @@ var AppController = function (loadingParams) {
     this.qrcodeHelperCanvas = $(UI_CONSTANTS.qrcodeHelperCanvas);
     this.qrcodeRoomDiv_ = $(UI_CONSTANTS.qrcodeRoomDiv);
     this.qrcodeRoomCanvas = $(UI_CONSTANTS.qrcodeRoomCanvas);
+    this.localIdDiv_ = $(UI_CONSTANTS.localIdDiv);
     enableAutoHiddenAfterTransitionEnd(this.qrcodeRoomDiv_);
     enableAutoHiddenAfterTransitionEnd(this.qrcodeHelperDiv_);
 
@@ -178,6 +180,8 @@ AppController.prototype.createCall_ = function () {
     this.call_.on('statusmessage', this.displayStatus_.bind(this));
     this.call_.on('error', this.displayError_.bind(this));
     this.call_.on("callerstarted", this.displaySharingInfo_.bind(this));
+
+    this.call_.on("connected",this.displayLocalId_.bind(this));
 };
 
 AppController.prototype.showRoomSelection_ = function () {
@@ -203,7 +207,7 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     this.call_.start(roomId);
 
     document.onkeypress = this.onKeyPress_.bind(this);
-    window.onmousemove = this.showIcons_.bind(this);
+    window.onmousemove = this.showHud_.bind(this);
 
     setUpFullScreen();
 
@@ -344,7 +348,7 @@ AppController.prototype.onRemoteSdp = function (pc) {
     }
 };
 AppController.prototype.onRemoteHangup_ = function (pc) {
-    this.displayStatus_('The remote side hung up.');
+    showAlert('The remote side hung up.');
     var ui = pc.ui;
     if (!ui) {
         return;
@@ -478,6 +482,11 @@ AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {
     this.activate_(this.sharingDiv_);
 };
 
+AppController.prototype.displayLocalId_ = function (roomId,roomLink,clientId) {
+    var localIdTips = '您的本地id是:' + clientId;
+    this.localIdDiv_.innerText = localIdTips;
+}
+
 AppController.prototype.displayStatus_ = function (status) {
     if (!status) {
         this.deactivate_(this.statusDiv_);
@@ -553,13 +562,15 @@ AppController.prototype.activate_ = function (element) {
 AppController.prototype.deactivate_ = function (element) {
     element.classList.remove('active');
 };
-AppController.prototype.showIcons_ = function () {
+AppController.prototype.showHud_ = function () {
     if (this.timerCloseIcons) {
         clearTimeout(this.timerCloseIcons);
     }
-    this.timerCloseIcons = setTimeout(this.hideIcons.bind(this), 2000);
+    this.timerCloseIcons = setTimeout(this.hideHud.bind(this), 2000);
     this.activate_(this.icons_);
+    this.show_(this.localIdDiv_);
 };
-AppController.prototype.hideIcons = function () {
+AppController.prototype.hideHud = function () {
     this.deactivate_(this.icons_);
+    this.hide_(this.localIdDiv_);
 };

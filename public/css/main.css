@@ -553,3 +553,16 @@ svg:hover {
 .fadeOut {
     opacity: 0 !important;
 }
+
+#localIdDiv {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 20pt;
+    left: 50px;
+    top: 10px;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
