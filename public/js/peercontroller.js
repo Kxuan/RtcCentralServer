@@ -104,6 +104,7 @@ window.PeerController = (function () {
     PeerController.prototype.createPeerElement = function () {
         var self = this;
 
+        var peerHeight;
         var el           = document.createElement('div'),
             elBackground = document.createElement('div'),
             elBackText   = document.createElement('div'),
@@ -118,17 +119,19 @@ window.PeerController = (function () {
         elControl.className = 'control-box';
         elPeerId.className = 'peerName';
 
-
         elVideo.autoplay = true;
         var oldWidth, oldHeight;
         elVideo.onprogress = function (p) {
+            if (!peerHeight) {
+                peerHeight = parseInt(getComputedStyle(el).height);
+            }
             if (this.readyState > 2) {
                 if (this.videoWidth != oldWidth || this.videoHeight != oldHeight) {
                     oldWidth = this.videoWidth;
                     oldHeight = this.videoHeight;
-                    self.emit("videoResize", oldWidth, oldHeight, elVideo);
                     elBackText.innerText = "已全屏";
-                    el.style.width = ((this.videoWidth / this.videoHeight) * el.clientHeight) + 'px';
+                    el.style.width = ((this.videoWidth / this.videoHeight) * peerHeight) + 'px';
+                    self.emit("videoResize", oldWidth, oldHeight, elVideo);
                 }
             }
         };

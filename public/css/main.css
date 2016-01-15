@@ -9,10 +9,19 @@
 .hidden {
     display: none;
 }
-
+*{
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
 a {
     color: #4285F4;
     text-decoration: none;
+    -webkit-user-select: text;
+    -moz-user-select: element;
+    -ms-user-select: element;
+    user-select: element;
 }
 
 a:hover {
@@ -503,6 +512,10 @@ svg:hover {
     bottom: 62px
 }
 
+#qrcodeHelper-Div.fadeOut {
+    left: -250px;
+}
+
 #qrcodeHelper-Div {
     position: fixed;
     left: 40%;
@@ -513,10 +526,10 @@ svg:hover {
     background-color: #4285F4;
 
     opacity: 1;
-    -webkit-transition: opacity 0.5s;
-    -moz-transition: opacity 0.5s;
-    -o-transition: opacity 0.5s;
-    transition: opacity 0.5s;
+    -webkit-transition: all 1s;
+    -moz-transition: all 1s;
+    -o-transition: all 1s;
+    transition: all 1s;
 }
 
 /*/////  qrcodeHelper CSS end  //////////////////////*/

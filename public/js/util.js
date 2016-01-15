@@ -168,7 +168,7 @@ function randomString(strLength) {
     return result.join('');
 }
 
-function enableAutoHiddenAfterFadeOut(el) {
+function enableAutoHiddenAfterTransitionEnd(el) {
     el.addEventListener('transitionend', function () {
         if (this.classList.contains('fadeOut')) {
             this.classList.add('hidden');

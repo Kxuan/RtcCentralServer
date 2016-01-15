@@ -73,8 +73,8 @@ var AppController = function (loadingParams) {
     this.qrcodeHelperCanvas = $(UI_CONSTANTS.qrcodeHelperCanvas);
     this.qrcodeRoomDiv_ = $(UI_CONSTANTS.qrcodeRoomDiv);
     this.qrcodeRoomCanvas = $(UI_CONSTANTS.qrcodeRoomCanvas);
-    enableAutoHiddenAfterFadeOut(this.qrcodeRoomDiv_);
-    enableAutoHiddenAfterFadeOut(this.qrcodeHelperDiv_);
+    enableAutoHiddenAfterTransitionEnd(this.qrcodeRoomDiv_);
+    enableAutoHiddenAfterTransitionEnd(this.qrcodeHelperDiv_);
 
 
     this.newRoomButton_.addEventListener('click',
