@@ -314,6 +314,7 @@ PeerConnectionClient.prototype.onIceConnectionStateChanged_ = function () {
         this.pc_.iceConnectionState === 'disconnected') {
 
         this.close();
+        return;
     }else
 
     if (this.pc_.iceConnectionState === 'completed') {
