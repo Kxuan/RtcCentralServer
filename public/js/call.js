@@ -58,9 +58,6 @@ Call.prototype.start = function (roomId) {
 
         this.requestMediaAndTurnServers_();
         this.connectToRoom_(roomId);
-
-        showRoomQrcode(document.getElementById('qrcodeRoomCanvas'));
-        showHelperQrcode(document.getElementById('qrcodeHelperCanvas'), this.params_.room_id, this.params_.client_id);
     }.bind(this));
 };
 
@@ -216,6 +213,8 @@ Call.prototype.connectToRoom_ = function (roomId) {
             .then(function () {
                 this.startSignaling_();
             }.bind(this));
+
+        this.emit('connected', this.params_.roomId, this.params_.roomLink, this.params_.clientId);
     }.bind(this)).catch(function (error) {
         this.onError_('WebSocket register error: ' + error.message);
     }.bind(this));
@@ -398,9 +397,6 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         default:
             console.info("Message:", msg);
     }
-};
-Call.prototype.onVideoHelperConnected = function (pc) {
-
 };
 Call.prototype.send = function (message) {
     var msgString = JSON.stringify(message);

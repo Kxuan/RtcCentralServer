@@ -220,27 +220,31 @@ PeerConnectionClient.prototype.receiveSignalingMessage = function (message) {
                 return;
             }
 
+            //如果已经有对端的Sdp，则更新远端sdp，然后做应答
             if (this.hasRemoteSdp_) {
                 this.setRemoteSdp_(message.content);
                 this.doAnswer_();
             } else {
+                //如果offer请求为手机助手请求，则检查是否以存在手机助手
                 if (message.isHelper) {
                     var hasHelper = this.call.hasHelper();
                     if (!hasHelper) {
+                        //如果当前没有手机助手，则尝试建立不发送本地音视频的RTC连接
                         console.trace("Android Helper Connected");
                         this.isHelper = true;
                         this.setRemoteSdp_(message.content);
                         this.doAnswer_();
-                        this.call.onVideoHelperConnected(this);
                     } else {
+                        //如果当前已有手机助手，则拒绝
                         this.call.send({
                             cmd:    "answer",
                             accept: false,
                             to:     this.peerId
                         });
-                        this.call.closePeer(this.peerId);
+                        this.close();
                     }
                 } else {
+                    //如果请求为非助手请求，则建立正常的对端连接
                     this.isHelper = false;
                     if (this.call.localStream_ !== null)
                         this.addStream(this.call.localStream_);
@@ -309,15 +313,13 @@ PeerConnectionClient.prototype.onIceConnectionStateChanged_ = function () {
         return;
     }
     trace('ICE connection state changed to: ' + this.pc_.iceConnectionState);
-    if( this.pc_.iceConnectionState === 'failed' ||
+    if (this.pc_.iceConnectionState === 'failed' ||
         this.pc_.iceConnectionState === 'closed' ||
         this.pc_.iceConnectionState === 'disconnected') {
 
         this.close();
         return;
-    }else
-
-    if (this.pc_.iceConnectionState === 'completed') {
+    } else if (this.pc_.iceConnectionState === 'completed') {
         trace('ICE complete time: ' +
             (window.performance.now() - this.startTime_).toFixed(0) + 'ms.');
     }

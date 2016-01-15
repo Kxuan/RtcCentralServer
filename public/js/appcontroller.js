@@ -27,6 +27,11 @@ var UI_CONSTANTS = {
     localVideo:                '#local-video',
     localVideoWrapper:         '#local-video-wrapper',
     qrcodeRoomSvg:             '#qrcode-room',
+    qrcodeRoomDiv:             '#qrcodeRoom-Div',
+    qrcodeRoomCanvas:          '#qrcodeRoomCanvas',
+    qrcodeHelperSvg:           '#qrcode-helper',
+    qrcodeHelperDiv:           '#qrcodeHelper-Div',
+    qrcodeHelperCanvas:        '#qrcodeHelperCanvas',
     muteAudioSvg:              '#mute-audio',
     muteVideoSvg:              '#mute-video',
     newRoomButton:             '#new-room-button',
@@ -41,10 +46,7 @@ var UI_CONSTANTS = {
     roomSelectionRecentList:   '#recent-rooms-list',
     sharingDiv:                '#sharing-div',
     statusDiv:                 '#status-div',
-    videosDiv:                 '#videos',
-    qrcodeHelperSvg:           '#qrcode-helper',
-    qrcodeHelperDiv:           '#qrcodeHelper-Div',
-    qrcodeRoomDiv:             '#qrcodeRoom-Div'
+    videosDiv:                 '#videos'
 };
 
 // The controller that connects the Call with the UI.
@@ -68,7 +70,9 @@ var AppController = function (loadingParams) {
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
     this.qrcodeHelper_ = $(UI_CONSTANTS.qrcodeHelper);
     this.qrcodeHelperDiv_ = $(UI_CONSTANTS.qrcodeHelperDiv);
+    this.qrcodeHelperCanvas = $(UI_CONSTANTS.qrcodeHelperCanvas);
     this.qrcodeRoomDiv_ = $(UI_CONSTANTS.qrcodeRoomDiv);
+    this.qrcodeRoomCanvas = $(UI_CONSTANTS.qrcodeRoomCanvas);
     enableAutoHiddenAfterFadeOut(this.qrcodeRoomDiv_);
     enableAutoHiddenAfterFadeOut(this.qrcodeHelperDiv_);
 
@@ -81,16 +85,34 @@ var AppController = function (loadingParams) {
      this.onQRcodeClick_.bind(this), false);*/
 
 
-    this.qrcodeHelperIconSet_ =
-        new AppController.IconSet_(UI_CONSTANTS.qrcodeHelperSvg);
-    this.roomQrcodeIconSet_ =
-        new AppController.IconSet_(UI_CONSTANTS.qrcodeRoomSvg);
-    this.muteAudioIconSet_ =
-        new AppController.IconSet_(UI_CONSTANTS.muteAudioSvg);
-    this.muteVideoIconSet_ =
-        new AppController.IconSet_(UI_CONSTANTS.muteVideoSvg);
-    this.fullscreenIconSet_ =
-        new AppController.IconSet_(UI_CONSTANTS.fullscreenSvg);
+    this.iconController = new IconController();
+    this.ctlQRHelper = this.iconController.add('qrhelper', $(UI_CONSTANTS.qrcodeHelperSvg));
+    this.ctlQRRoom = this.iconController.add('qrroom', $(UI_CONSTANTS.qrcodeRoomSvg));
+    this.ctlAudio = this.iconController.add('audio', $(UI_CONSTANTS.muteAudioSvg));
+    this.ctlVideo = this.iconController.add('video', $(UI_CONSTANTS.muteVideoSvg));
+    this.ctlFullscreen = this.iconController.add('fullscreen', $(UI_CONSTANTS.fullscreenSvg));
+    this.ctlHangup = this.iconController.add('hangup', $(UI_CONSTANTS.hangupSvg));
+    this.ctlHangup.on('enable', console.trace.bind(console, 'Control Icon Hangup is enabled'));
+    this.ctlHangup.on('disable', console.trace.bind(console, 'Control Icon Hangup is disabled'));
+
+    this.ctlQRHelper.on('click', this.ctlQRHelper.toggle);
+    this.ctlQRRoom.on('click', this.ctlQRRoom.toggle);
+    this.ctlAudio.on('click', this.ctlAudio.toggle);
+    this.ctlVideo.on('click', this.ctlVideo.toggle);
+    this.ctlFullscreen.on('click', this.ctlFullscreen.toggle);
+    this.ctlHangup.on('click', this.hangup_.bind(this));
+
+    this.ctlQRHelper.on('enable', this.ctlQRHelperEnable.bind(this));
+    this.ctlQRHelper.on('disable', this.ctlQRHelperDisable.bind(this));
+    this.ctlQRHelper.on('active', this.ctlQRHelperActive.bind(this));
+    this.ctlQRHelper.on('deactive', this.ctlQRHelperDeactive.bind(this));
+
+    this.ctlQRRoom.on('active', this.ctlQRRoomActive.bind(this));
+    this.ctlQRRoom.on('deactive', this.ctlQRRoomDeactive.bind(this));
+    this.ctlAudio.on('toggle', this.toggleAudioMute_.bind(this));
+    this.ctlVideo.on('toggle', this.toggleVideoMute_.bind(this));
+    this.ctlFullscreen.on('toggle', this.toggleFullScreen_.bind(this));
+
 
     this.roomLink_ = '';
     this.roomSelection_ = null;
@@ -141,7 +163,7 @@ AppController.prototype.createCall_ = function () {
         this.call_,
         'Alpha-Test');
 
-    // TODO(jiayl): replace callbacks with events.
+    this.call_.on('connected', this.onCallConnected.bind(this));
     this.call_.on('remotehangup', this.onRemoteHangup_.bind(this));
     this.call_.on('remotestreamadded', this.onRemoteStreamAdded_.bind(this));
     this.call_.on('localstreamadded', this.onLocalStreamAdded_.bind(this));
@@ -173,7 +195,8 @@ AppController.prototype.showRoomSelection_ = function () {
 
         this.roomSelection_ = null;
         if (this.localStream_) {
-            this.attachLocalStream_();
+            attachMediaStream(this.localVideo_, this.localStream_);
+            this.updateLayout();
         }
     }.bind(this));
 };
@@ -183,13 +206,6 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
 
     document.onkeypress = this.onKeyPress_.bind(this);
     window.onmousemove = this.showIcons_.bind(this);
-
-    $(UI_CONSTANTS.qrcodeHelperSvg).onclick = this.toggleQrcodeHelper_.bind(this);
-    $(UI_CONSTANTS.qrcodeRoomSvg).onclick = this.toggleQrcodeRoom_.bind(this);
-    $(UI_CONSTANTS.muteAudioSvg).onclick = this.toggleAudioMute_.bind(this);
-    $(UI_CONSTANTS.muteVideoSvg).onclick = this.toggleVideoMute_.bind(this);
-    $(UI_CONSTANTS.fullscreenSvg).onclick = this.toggleFullScreen_.bind(this);
-    $(UI_CONSTANTS.hangupSvg).onclick = this.hangup_.bind(this);
 
     setUpFullScreen();
 
@@ -217,7 +233,6 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
 
 AppController.prototype.hangup_ = function () {
     trace('Hanging up.');
-    this.hide_(this.icons_);
     this.displayStatus_('Hanging up');
     this.transitionToDone_();
 
@@ -268,13 +283,6 @@ AppController.prototype.updateLayout = function () {
         this.videosDiv_.classList.add('hidden');
     }
 
-    //如果此时有远程视频源，则显示挂断按钮
-    if (this.allPeerControllers.length > 0) {
-        this.show_(this.hangupSvg_);
-    } else {
-        this.hide_(this.hangupSvg_);
-    }
-
     //如果有可显示的远程视频则显示分享
     if (countPlayableVideo >= 1) {
         this.deactivate_(this.sharingDiv_);
@@ -282,13 +290,6 @@ AppController.prototype.updateLayout = function () {
     } else {
         this.activate_(this.sharingDiv_);
         this.show_(this.sharingDiv_);
-    }
-
-    //本地流
-    if (this.localStream_) {
-        this.show_(this.icons_);
-    } else {
-        this.hide_(this.icons_);
     }
 };
 
@@ -304,12 +305,26 @@ AppController.prototype.attachLocalStream_ = function () {
 
 AppController.prototype.transitionToDone_ = function () {
     this.deactivate_(this.localVideo_);
-    this.hide_(this.hangupSvg_);
+    this.iconController.disableAll();
     this.activate_(this.rejoinDiv_);
     this.show_(this.rejoinDiv_);
     this.displayStatus_('');
 };
+AppController.prototype.onCallConnected = function (roomId, roomLink, clientId) {
+    this.pushCallNavigation_(roomId, roomLink);
 
+    this.ctlHangup.enable();
+    this.ctlQRRoom.enable();
+    if (this.localStream_) {
+        this.ctlAudio.enable();
+        this.ctlVideo.enable();
+    } else {
+        this.ctlQRHelper.enable();
+    }
+
+    renderHelperQrcode(this.qrcodeHelperCanvas, roomId, clientId);
+    renderRoomQrcode(this.qrcodeRoomCanvas);
+};
 AppController.prototype.onRemoteSdp = function (pc) {
     var ui = pc.ui;
     if (!ui) {
@@ -358,27 +373,56 @@ AppController.prototype.onRemoteStreamRemoved = function (pc, stream) {
 AppController.prototype.onLocalStreamAdded_ = function (stream) {
     trace('User has granted access to local media.');
     this.localStream_ = stream;
+    attachMediaStream(this.localVideo_, this.localStream_);
 
-    if (!this.roomSelection_) {
-        this.attachLocalStream_();
-    }
+    this.ctlQRHelper.disable();
+    this.ctlAudio.enable();
+    this.ctlVideo.enable();
+
     this.updateLayout();
 };
 AppController.prototype.onLocalStreamRemoved = function () {
     trace("Local stream removed");
     this.localStream_ = null;
-
     this.localVideo_.src = '';
 
+    //当前全屏视频为本地视频流时，尝试自动将全屏视频改为第一个远端设备
     if (this.allPeerControllers.length > 0 && this.currentFullPageUI === null) {
         this.currentFullPageUI = this.allPeerControllers[0];
     }
+
     this.displayStatus_('');
+    this.ctlQRHelper.enable();
+    this.ctlAudio.disable();
+    this.ctlVideo.disable();
     this.updateLayout();
-    //this.show_(this.qrcodeHelper_);
-    //this.qrcodeHelperDiv_.style.display = "block";
-    this.qrcodeRoomDiv_.classList.remove('hidden');
 };
+
+AppController.prototype.ctlQRHelperEnable = function () {
+    this.ctlQRHelper.active();
+};
+AppController.prototype.ctlQRHelperDisable = function () {
+    this.ctlQRHelper.deactive();
+};
+AppController.prototype.ctlQRHelperActive = function () {
+    this.qrcodeHelperDiv_.classList.remove('hidden');
+    +this.qrcodeHelperDiv_.clientWidth;
+    this.qrcodeHelperDiv_.classList.remove('fadeOut');
+};
+AppController.prototype.ctlQRHelperDeactive = function () {
+    this.qrcodeHelperDiv_.classList.remove('hidden');
+    this.qrcodeHelperDiv_.classList.add('fadeOut');
+};
+AppController.prototype.ctlQRRoomActive = function () {
+    this.qrcodeRoomDiv_.classList.remove('hidden');
+    +this.qrcodeRoomDiv_.clientWidth;
+    this.qrcodeRoomDiv_.classList.remove('fadeOut');
+};
+AppController.prototype.ctlQRRoomDeactive = function () {
+    this.qrcodeRoomDiv_.classList.remove('hidden');
+    this.qrcodeRoomDiv_.classList.add('fadeOut');
+};
+
 
 AppController.prototype.onRejoinClick_ = function () {
     this.deactivate_(this.rejoinDiv_);
@@ -390,21 +434,6 @@ AppController.prototype.onNewRoomClick_ = function () {
     this.deactivate_(this.rejoinDiv_);
     this.hide_(this.rejoinDiv_);
     this.showRoomSelection_();
-};
-
-//gaizao
-AppController.prototype.toggleQrcodeHelper_ = function () {
-    result = this.qrcodeHelperIconSet_.toggle();
-    //var result = this.qrcodeHelperDiv_.style.display;
-    this.qrcodeHelperDiv_.classList.remove('hidden');
-    +this.qrcodeHelperDiv_.clientWidth;
-    if (!result) {
-        this.qrcodeHelperDiv_.classList.remove('fadeOut');
-        //this.qrcodeHelperDiv_.style.display = 'block';
-    } else {
-        this.qrcodeHelperDiv_.classList.add('fadeOut');
-        //this.qrcodeHelperDiv_.style.display = 'none';
-    }
 };
 
 // Spacebar, or m: toggle audio mute.
@@ -450,7 +479,6 @@ AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {
     this.roomLinkHref_.href = roomLink;
     this.roomLinkHref_.text = roomLink;
     this.roomLink_ = roomLink;
-    this.pushCallNavigation_(roomId, roomLink);
     this.activate_(this.sharingDiv_);
 };
 
@@ -468,25 +496,12 @@ AppController.prototype.displayError_ = function (error) {
     this.infoBox_.pushErrorMessage(error);
 };
 
-AppController.prototype.toggleQrcodeRoom_ = function () {
-    var result = this.roomQrcodeIconSet_.toggle();
-    this.qrcodeRoomDiv_.classList.remove('hidden');
-    +this.qrcodeRoomDiv_.clientWidth;
-    if (result) {
-        this.qrcodeRoomDiv_.classList.remove('fadeOut');
-    } else {
-        this.qrcodeRoomDiv_.classList.add('fadeOut');
-    }
-};
-
 AppController.prototype.toggleAudioMute_ = function () {
     this.call_.toggleAudioMute();
-    this.muteAudioIconSet_.toggle();
 };
 
 AppController.prototype.toggleVideoMute_ = function () {
     this.call_.toggleVideoMute();
-    this.muteVideoIconSet_.toggle();
 };
 
 AppController.prototype.toggleFullScreen_ = function () {
@@ -497,7 +512,6 @@ AppController.prototype.toggleFullScreen_ = function () {
         trace('Entering fullscreen.');
         document.body.requestFullScreen();
     }
-    this.fullscreenIconSet_.toggle();
 };
 
 
@@ -552,20 +566,4 @@ AppController.prototype.showIcons_ = function () {
 };
 AppController.prototype.hideIcons = function () {
     this.deactivate_(this.icons_);
-};
-
-AppController.IconSet_ = function (iconSelector) {
-    this.iconElement = document.querySelector(iconSelector);
-};
-
-AppController.IconSet_.prototype.toggle = function () {
-    if (this.iconElement.classList.contains('on')) {
-        this.iconElement.classList.remove('on');
-        // turn it off: CSS hides `svg path.on` and displays `svg path.off`
-        return false;
-    } else {
-        // turn it on: CSS displays `svg.on path.on` and hides `svg.on path.off`
-        this.iconElement.classList.add('on');
-        return true;
-    }
 };
