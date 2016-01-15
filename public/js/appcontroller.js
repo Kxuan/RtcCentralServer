@@ -81,9 +81,6 @@ var AppController = function (loadingParams) {
         this.onNewRoomClick_.bind(this), false);
     this.rejoinButton_.addEventListener('click',
         this.onRejoinClick_.bind(this), false);
-    /*this.qrcodeHelper_.addEventListener('click',
-     this.onQRcodeClick_.bind(this), false);*/
-
 
     this.iconController = new IconController();
     this.ctlQRHelper = this.iconController.add('qrhelper', $(UI_CONSTANTS.qrcodeHelperSvg));
@@ -109,6 +106,7 @@ var AppController = function (loadingParams) {
 
     this.ctlQRRoom.on('active', this.ctlQRRoomActive.bind(this));
     this.ctlQRRoom.on('deactive', this.ctlQRRoomDeactive.bind(this));
+
     this.ctlAudio.on('toggle', this.toggleAudioMute_.bind(this));
     this.ctlVideo.on('toggle', this.toggleVideoMute_.bind(this));
     this.ctlFullscreen.on('toggle', this.toggleFullScreen_.bind(this));
@@ -299,8 +297,6 @@ AppController.prototype.attachLocalStream_ = function () {
 
     this.displayStatus_('');
     this.updateLayout();
-    //this.hide_(this.qrcodeHelper_);
-    //this.qrcodeHelperDiv_.style.display = "none";
 };
 
 AppController.prototype.transitionToDone_ = function () {

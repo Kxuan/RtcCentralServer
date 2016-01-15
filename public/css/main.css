@@ -419,11 +419,11 @@ svg:hover {
 
 #qrcode-helper:hover,
 #qrcode-helper.on {
-    background: #FF4F0B;
+    background: #F9731B;
 }
 
 #qrcode-helper:hover circle {
-    fill: #FF4F0B;
+    fill: #F9731B;
 }
 
 #qrcode-helper {
@@ -432,11 +432,11 @@ svg:hover {
 
 #qrcode-room:hover,
 #qrcode-room.on {
-    background: #008B00;
+    background: #1BA34E;
 }
 
 #qrcode-room:hover circle {
-    fill: #008B00;
+    fill: #1BA34E;
 }
 
 #mute-audio {
@@ -458,11 +458,11 @@ svg:hover {
 
 #mute-video:hover,
 #mute-video.on {
-    background: #ff9f00;
+    background: #FACC1B;
 }
 
 #mute-video:hover circle {
-    fill: #ff9f00;
+    fill: #FACC1B;
 }
 
 #switch-video {
@@ -483,11 +483,11 @@ svg:hover {
 
 #fullscreen:hover,
 #fullscreen.on {
-    background: #407cf7;
+    background: #1B93CD;
 }
 
 #fullscreen:hover circle {
-    fill: #407cf7;
+    fill: #1B93CD;
 }
 
 #hangup {
@@ -495,11 +495,11 @@ svg:hover {
 }
 
 #hangup:hover {
-    background: #dd2c00;
+    background: #C41B1B;
 }
 
 #hangup:hover circle {
-    fill: #dd2c00;
+    fill: #C41B1B;
 }
 
 /*////// icons CSS end /////////////////////////*/
