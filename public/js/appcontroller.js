@@ -96,7 +96,7 @@ var AppController = function (loadingParams) {
     this.localStream_ = null;
 
     this.currentFullPageUI = null;
-    this.allRemoteElements = [];
+    this.allPeerControllers = [];
 
     // If the params has a roomId specified, we should connect to that room
     // immediately. If not, show the room selection UI.
@@ -168,8 +168,6 @@ AppController.prototype.showRoomSelection_ = function () {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
-        //this.show_(this.qrcodeHelper_);
-        //this.qrcodeHelperDiv_.style.display = "block";
         this.qrcodeRoomDiv_.classList.remove('hidden');
 
         this.roomSelection_ = null;
@@ -249,11 +247,12 @@ AppController.prototype.updateLayout = function () {
     var countPlayableVideo = 0;
     //遍历所有远程视频标签，
     // 该全屏的全屏，不该全屏的缩小掉
-    this.allRemoteElements.forEach(function (ui) {
+    this.allPeerControllers.forEach(function (ui) {
         var video = ui.getVideoElement();
         if (video && video.readyState > 2) {
             countPlayableVideo++;
         }
+
         if (ui === this.currentFullPageUI) {
             this.setVideoFullpage(ui.getVideoElement(), ui.getVideoWrapper());
         } else {
@@ -262,14 +261,14 @@ AppController.prototype.updateLayout = function () {
     }.bind(this));
 
     //如果有不能播放的远程视频或者远程视频不止1个，则显示远程视频栏
-    if (countPlayableVideo != this.allRemoteElements.length || this.allRemoteElements.length > 1) {
+    if (countPlayableVideo != this.allPeerControllers.length || this.allPeerControllers.length > 1) {
         this.videosDiv_.classList.remove('hidden');
     } else {
         this.videosDiv_.classList.add('hidden');
     }
 
     //如果此时有远程视频源，则显示挂断按钮
-    if (this.allRemoteElements.length > 0) {
+    if (this.allPeerControllers.length > 0) {
         this.show_(this.hangupSvg_);
     } else {
         this.hide_(this.hangupSvg_);
@@ -324,9 +323,9 @@ AppController.prototype.onRemoteSdp = function (pc) {
         }.bind(this));
 
         this.videosDiv_.appendChild(ui.getRootElement());
-        this.allRemoteElements.push(ui);
+        this.allPeerControllers.push(ui);
 
-        if (this.allRemoteElements.length == 1) {
+        if (this.allPeerControllers.length == 1) {
             this.currentFullPageUI = ui;
             this.updateLayout();
         }
@@ -339,9 +338,12 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
         return;
     }
     ui.destroyRemotePeer();
-    this.allRemoteElements = this.allRemoteElements.filter(function (r) {
+    this.allPeerControllers = this.allPeerControllers.filter(function (r) {
         return r !== pc.ui;
     });
+    if (this.currentFullPageUI === ui) {
+        this.currentFullPageUI = this.allPeerControllers.length > 0 ? this.allPeerControllers[0] : null;
+    }
     delete pc.ui;
     this.updateLayout();
 };
@@ -367,8 +369,8 @@ AppController.prototype.onLocalStreamRemoved = function () {
 
     this.localVideo_.src = '';
 
-    if (this.allRemoteElements.length > 0 && this.currentFullPageUI === null) {
-        this.currentFullPageUI = this.allRemoteElements[0];
+    if (this.allPeerControllers.length > 0 && this.currentFullPageUI === null) {
+        this.currentFullPageUI = this.allPeerControllers[0];
     }
     this.displayStatus_('');
     this.updateLayout();
