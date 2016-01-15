@@ -42,7 +42,7 @@ var UI_CONSTANTS = {
     sharingDiv:                '#sharing-div',
     statusDiv:                 '#status-div',
     videosDiv:                 '#videos',
-    qrcodeHelperSvg:              '#qrcode-helper',
+    qrcodeHelperSvg:           '#qrcode-helper',
     qrcodeHelperDiv:           '#qrcodeHelper-Div',
     qrcodeRoomDiv:             '#qrcodeRoom-Div'
 };
@@ -78,7 +78,8 @@ var AppController = function (loadingParams) {
     this.rejoinButton_.addEventListener('click',
         this.onRejoinClick_.bind(this), false);
     /*this.qrcodeHelper_.addEventListener('click',
-        this.onQRcodeClick_.bind(this), false);*/
+     this.onQRcodeClick_.bind(this), false);*/
+
 
     this.qrcodeHelperIconSet_ =
         new AppController.IconSet_(UI_CONSTANTS.qrcodeHelperSvg);
@@ -543,12 +544,14 @@ AppController.prototype.deactivate_ = function (element) {
     element.classList.remove('active');
 };
 AppController.prototype.showIcons_ = function () {
-    if (!this.icons_.classList.contains('active')) {
-        this.activate_(this.icons_);
-        setTimeout(function () {
-            this.deactivate_(this.icons_);
-        }.bind(this), 5000);
+    if (this.timerCloseIcons) {
+        clearTimeout(this.timerCloseIcons);
     }
+    this.timerCloseIcons = setTimeout(this.hideIcons.bind(this), 2000);
+    this.activate_(this.icons_);
+};
+AppController.prototype.hideIcons = function () {
+    this.deactivate_(this.icons_);
 };
 
 AppController.IconSet_ = function (iconSelector) {
