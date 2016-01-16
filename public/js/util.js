@@ -198,8 +198,8 @@ function showAlert(aleString) {
 }
 
 //未连入新房间的二维码
-function renderRoomQrcode(qrCanvas) {
-    var joinValue = location.origin + location.pathname;
+function renderRoomQrcode(qrCanvas,qrRoom, qrPeer) {
+    var joinValue = location.origin + '/android/?room=' + qrRoom + '&peer=' + qrPeer;
     return qr.canvas({
         canvas: qrCanvas,
         value:  joinValue,

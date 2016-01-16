@@ -288,6 +288,7 @@ AppController.prototype.onCallConnected = function (roomId, roomLink, clientId) 
 
     this.ctlHangup.show();
     this.ctlQRRoom.show();
+    this.ctlFullscreen.show();
     if (this.localStream_) {
         this.ctlAudio.show();
         this.ctlVideo.show();
@@ -296,7 +297,7 @@ AppController.prototype.onCallConnected = function (roomId, roomLink, clientId) 
     }
 
     renderHelperQrcode(this.qrcodeHelperCanvas, roomId, clientId);
-    renderRoomQrcode(this.qrcodeRoomCanvas);
+    renderRoomQrcode(this.qrcodeRoomCanvas,roomId,clientId);
 };
 AppController.prototype.onRemoteSdp = function (pc) {
     var ui = pc.ui;
