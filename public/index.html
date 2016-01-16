@@ -33,10 +33,10 @@
     <p id="instructions">Please enter a room name.</p>
 
     <div>
-        <div id="room-id-input-div"><input id="room-id-input" type="text" autofocus=""><label id="room-id-input-label"
-                                                                                              for="room-id-input"
-                                                                                              class="error-label hidden">Room
-            name must be 1 or more characters and include only letters and numbers.</label></div>
+        <div id="room-id-input-div"><input id="room-id-input" type="number" autofocus="">
+            <label id="room-id-input-label" for="room-id-input" class="error-label hidden">
+                Room name must be 1 or more characters and include only letters and numbers.</label>
+        </div>
         <div id="room-id-input-buttons">
             <button id="join-button">JOIN</button>
             <button id="random-button">RANDOM</button>
@@ -152,7 +152,6 @@
 
 <script src="/js/util.js"></script>
 <script src="/js/adapter.js"></script>
-<script src="/js/storage.js"></script>
 
 <script src="/js/rtc/call.js"></script>
 <script src="/js/rtc/peerconnectionclient.js"></script>

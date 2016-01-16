@@ -1,34 +1,4 @@
-/*
- *  Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree.
- */
-
-/* More information about these options at jshint.com/docs/options */
-
-/* globals trace */
-/* exported setCodecParam, iceCandidateType, maybeSetOpusOptions,
-   maybePreferAudioReceiveCodec, maybePreferAudioSendCodec,
-   maybeSetAudioReceiveBitRate, maybeSetAudioSendBitRate,
-   maybePreferVideoReceiveCodec, maybePreferVideoSendCodec,
-   maybeSetVideoReceiveBitRate, maybeSetVideoSendBitRate,
-   maybeSetVideoSendInitialBitRate, mergeConstraints, removeCodecParam */
-
 'use strict';
-
-function mergeConstraints(cons1, cons2) {
-  if (!cons1 || !cons2) {
-    return cons1 || cons2;
-  }
-  var merged = cons1;
-  for (var name in cons2.mandatory) {
-    merged.mandatory[name] = cons2.mandatory[name];
-  }
-  merged.optional = merged.optional.concat(cons2.optional);
-  return merged;
-}
 
 function iceCandidateType(candidateStr) {
   return candidateStr.split(' ')[7];

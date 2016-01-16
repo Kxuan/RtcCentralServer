@@ -1,17 +1,3 @@
-/*
- *  Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree.
- */
-
-/* More information about these options at jshint.com/docs/options */
-
-/* exported setUpFullScreen, fullScreenElement, isFullScreen,
- requestTurnServers, sendAsyncUrlRequest, sendSyncUrlRequest, randomString, $,
- queryStringToDictionary */
-/* globals chrome */
 
 'use strict';
 
@@ -82,11 +68,7 @@ function requestTurnServers(turnRequestUrl, turnTransports) {
         // access to turn request url.
         var method = 'GET';
         sendAsyncUrlRequest(method, turnRequestUrl).then(function (response) {
-            var turnServerResponse = parseJSON(response);
-            if (!turnServerResponse) {
-                reject(Error('Error parsing response JSON: ' + response));
-                return;
-            }
+            var turnServerResponse = JSON.parse(response);
             // Filter the TURN URLs to only use the desired transport, if specified.
             if (turnTransports.length > 0) {
                 filterTurnUrls(turnServerResponse.uris, turnTransports);
@@ -108,16 +90,6 @@ function requestTurnServers(turnRequestUrl, turnTransports) {
     });
 }
 
-// Parse the supplied JSON, or return null if parsing fails.
-function parseJSON(json) {
-    try {
-        return JSON.parse(json);
-    } catch (e) {
-        trace('Error parsing json: ' + json);
-    }
-    return null;
-}
-
 // Filter a list of TURN urls to only contain those with transport=|protocol|.
 function filterTurnUrls(urls, protocol) {
     for (var i = 0; i < urls.length;) {
@@ -130,30 +102,6 @@ function filterTurnUrls(urls, protocol) {
     }
 }
 
-// Start shims for fullscreen
-function setUpFullScreen() {
-    document.cancelFullScreen = document.webkitCancelFullScreen ||
-        document.mozCancelFullScreen || document.cancelFullScreen;
-
-    document.body.requestFullScreen = document.body.webkitRequestFullScreen ||
-        document.body.mozRequestFullScreen || document.body.requestFullScreen;
-
-
-    document.onfullscreenchange = document.onfullscreenchange ||
-        document.onwebkitfullscreenchange || document.onmozfullscreenchange;
-}
-
-function isFullScreen() {
-    return !!(document.webkitIsFullScreen || document.mozFullScreen ||
-    document.isFullScreen); // if any defined and true
-}
-
-function fullScreenElement() {
-    return document.webkitFullScreenElement ||
-        document.webkitCurrentFullScreenElement ||
-        document.mozFullScreenElement ||
-        document.fullScreenElement;
-}
 
 // End shims for fullscreen
 
@@ -186,6 +134,16 @@ function renderHelperQrcode(qrCanvas, qrRoom, qrMaster) {
     });
 }
 
+//未连入新房间的二维码
+function renderRoomQrcode(qrCanvas,qrRoom, qrPeer) {
+    var joinValue = location.origin + '/android/?room=' + qrRoom + '&peer=' + qrPeer;
+    return qr.canvas({
+        canvas: qrCanvas,
+        value:  joinValue,
+        size:   8
+    });
+}
+
 //自定义消息框，参数为需提示的消息
 function showAlert(aleString) {
     var d = dialog({
@@ -195,15 +153,5 @@ function showAlert(aleString) {
     setTimeout(function () {
         d.close().remove();
     }, 2500);
-}
-
-//未连入新房间的二维码
-function renderRoomQrcode(qrCanvas,qrRoom, qrPeer) {
-    var joinValue = location.origin + '/android/?room=' + qrRoom + '&peer=' + qrPeer;
-    return qr.canvas({
-        canvas: qrCanvas,
-        value:  joinValue,
-        size:   8
-    });
 }
 

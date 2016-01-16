@@ -9,12 +9,14 @@
 .hidden {
     display: none;
 }
-*{
+
+* {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
 }
+
 a {
     color: #4285F4;
     text-decoration: none;
@@ -301,7 +303,7 @@ button[disabled] {
     background-color: rgba(255, 255, 255, 0.12);
 }
 
-input[type=text] {
+input[type=text], input[type=number] {
     border: none;
     border-bottom: solid 1px #4c4c4f;
     font-size: 1em;
@@ -311,6 +313,14 @@ input[type=text] {
     margin-right: 20px;
     width: 100%;
     display: block;
+    outline: none;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0;
 }
 
 input[type="text"]:focus {
