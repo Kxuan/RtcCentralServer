@@ -58,7 +58,6 @@ var AppController = function (loadingParams) {
     trace('Initializing; room=' + loadingParams.roomId + '.');
 
     this.fullpageWrapper = $(UI_CONSTANTS.fullpageWrapper);
-    //this.hangupSvg_ = $(UI_CONSTANTS.hangupSvg);
     this.icons_ = $(UI_CONSTANTS.icons);
     this.localVideo_ = $(UI_CONSTANTS.localVideo);
     this.localVideoWrapper = $(UI_CONSTANTS.localVideoWrapper);
@@ -69,7 +68,6 @@ var AppController = function (loadingParams) {
     this.rejoinDiv_ = $(UI_CONSTANTS.rejoinDiv);
     this.rejoinButton_ = $(UI_CONSTANTS.rejoinButton);
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
-    //this.qrcodeHelper_ = $(UI_CONSTANTS.qrcodeHelper);
     this.qrcodeHelperDiv_ = $(UI_CONSTANTS.qrcodeHelperDiv);
     this.qrcodeHelperCanvas = $(UI_CONSTANTS.qrcodeHelperCanvas);
     this.qrcodeRoomDiv_ = $(UI_CONSTANTS.qrcodeRoomDiv);
