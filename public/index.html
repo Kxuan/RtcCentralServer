@@ -30,25 +30,25 @@
 </div>
 <div id="room-selection" class="hidden"><h1>AppRTC</h1>
 
-    <p id="instructions">Please enter a room name.</p>
+    <p id="instructions">请输入房间号：</p>
 
     <div>
         <div id="room-id-input-div"><input id="room-id-input" type="number" autofocus="">
             <label id="room-id-input-label" for="room-id-input" class="error-label hidden">
-                Room name must be 1 or more characters and include only letters and numbers.</label>
+                房间号必须为大于0的整数</label>
         </div>
         <div id="room-id-input-buttons">
-            <button id="join-button">JOIN</button>
-            <button id="random-button">RANDOM</button>
+            <button id="join-button">加入</button>
+            <button id="random-button">随机产生</button>
         </div>
     </div>
-    <div id="recent-rooms"><p>Recently used rooms:</p>
+    <div id="recent-rooms"><p>房间号记录：</p>
         <ul id="recent-rooms-list"></ul>
     </div>
 </div>
 <div id="confirm-join-div" class="hidden">
-    <div>Ready to join<span id="confirm-join-room-span"></span>?</div>
-    <button id="confirm-join-button">JOIN</button>
+    <div>准备加入<span id="confirm-join-room-span"></span>?</div>
+    <button id="confirm-join-button">加入</button>
 </div>
 <footer>
     <div id="sharing-div">
@@ -57,8 +57,8 @@
     <div id="info-div"></div>
     <div id="status-div"></div>
     <div id="rejoin-div" class="hidden"><span>You have left the call.</span>
-        <button id="rejoin-button">REJOIN</button>
-        <button id="new-room-button">NEW ROOM</button>
+        <button id="rejoin-button">重新加入</button>
+        <button id="new-room-button">新房间</button>
     </div>
 </footer>
 <div id="icons" class="">
