@@ -303,7 +303,7 @@ window.AppController = (function () {
         }
     };
     AppController.prototype.onRemoteHangup_ = function (pc) {
-        showAlert('The remote side hung up.');
+        showAlert('远程已挂断！');
         var ui = pc.ui;
         if (!ui) {
             return;
