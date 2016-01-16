@@ -188,7 +188,7 @@ AppController.prototype.finishCallSetup_ = function (roomId) {
     this.call_.start(roomId);
 
     document.onkeypress = this.onKeyPress_.bind(this);
-    window.onmousemove = this.showHud_.bind(this);
+    window.onmousemove = this.showHud.bind(this);
 
     setUpFullScreen();
 
@@ -297,7 +297,7 @@ AppController.prototype.onCallConnected = function (roomId, roomLink, clientId) 
     }
 
     renderHelperQrcode(this.qrcodeHelperCanvas, roomId, clientId);
-    renderRoomQrcode(this.qrcodeRoomCanvas,roomId,clientId);
+    renderRoomQrcode(this.qrcodeRoomCanvas, roomId, clientId);
 };
 AppController.prototype.onRemoteSdp = function (pc) {
     var ui = pc.ui;
@@ -526,11 +526,15 @@ AppController.prototype.activate_ = function (element) {
 AppController.prototype.deactivate_ = function (element) {
     element.classList.remove('active');
 };
-AppController.prototype.showHud_ = function () {
-    if (this.timerCloseIcons) {
-        clearTimeout(this.timerCloseIcons);
+AppController.prototype.showHud = function () {
+    var now = Date.now();
+    if (this.timeLastCloseIcons === undefined || now - this.timeLastCloseIcons > 200) {
+        if (this.timerCloseIcons) {
+            clearTimeout(this.timerCloseIcons);
+        }
+        this.timeLastCloseIcons = now;
+        this.timerCloseIcons = setTimeout(this.hideHud.bind(this), 2000);
     }
-    this.timerCloseIcons = setTimeout(this.hideHud.bind(this), 2000);
     this.activate_(this.icons_);
     this.show_(this.localIdDiv_);
 };
