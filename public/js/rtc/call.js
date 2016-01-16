@@ -109,16 +109,16 @@ Call.prototype.closePeer = function (uid) {
     }
 
     var pc = this.peerConnections[uid];
-    if(pc.isHelper) {
-        for(var chromePc in this.peerConnections) {
-            if(this.peerConnections[chromePc].isHelper === false) {
+    if (pc.isHelper) {
+        for (var chromePc in this.peerConnections) {
+            if (this.peerConnections[chromePc].isHelper === false) {
                 this.peerConnections[chromePc].removeStream(this.localStream_);
             }
         }
         this.localStream_ = null;
         this.emit('localstreamremoved', pc);
-    }else {
-            this.emit('remotehangup', pc);
+    } else {
+        this.emit('remotehangup', pc);
     }
 
     pc.close();
@@ -301,12 +301,11 @@ Call.prototype.getPeerConnection = function (peerId) {
                 this.emit('remoteSdp', pc);
             }
         }.bind(this));
-        pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this,pc));
+        pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this, pc));
         pc.on('signalingstatechange', this.emit.bind(this, 'signalingstatechange'));
         pc.on('iceconnectionstatechange', this.emit.bind(this, 'iceconnectionstatechange'));
-        pc.on('newicecandidate', this.emit.bind(this, 'newicecandidate'));
         pc.on('error', this.emit.bind(this, 'error'));
-        pc.on('close',this.closePeer.bind(this,peerId));
+        pc.on('close', this.closePeer.bind(this, peerId));
         trace('Created PeerConnectionClient');
         return pc;
     } catch (e) {
@@ -389,7 +388,7 @@ Call.prototype.onRecvSignalingChannelMessage_ = function (msg) {
         case 'leave':
             showAlert(msg.id + '退出房间');
             pc = this.peerConnections[msg.id];
-            if(pc)
+            if (pc)
                 pc.close();
 
             break;
@@ -417,6 +416,7 @@ Call.prototype.onRemoteStreamAdded = function (pc, stream) {
 };
 Call.prototype.onError_ = function (message) {
     this.emit('error', message);
+    throw message;
 };
 Call.prototype.hasHelper = function () {
     var pc;

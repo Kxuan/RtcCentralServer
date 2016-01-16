@@ -157,10 +157,6 @@ var AppController = function (loadingParams) {
 
 AppController.prototype.createCall_ = function () {
     this.call_ = new Call(this.loadingParams_);
-    this.infoBox_ = new InfoBox($(UI_CONSTANTS.infoDiv),
-        this.call_,
-        'Alpha-Test');
-
     this.call_.on('connected', this.onCallConnected.bind(this));
     this.call_.on('remotehangup', this.onRemoteHangup_.bind(this));
     this.call_.on('remotestreamadded', this.onRemoteStreamAdded_.bind(this));
@@ -168,15 +164,7 @@ AppController.prototype.createCall_ = function () {
     this.call_.on('localstreamremoved', this.onLocalStreamRemoved.bind(this));
     this.call_.on('remoteSdp', this.onRemoteSdp.bind(this));
 
-    this.call_.on('signalingstatechange',
-        this.infoBox_.updateInfoDiv.bind(this.infoBox_));
-    this.call_.on('iceconnectionstatechange',
-        this.infoBox_.updateInfoDiv.bind(this.infoBox_));
-    this.call_.on('newicecandidate',
-        this.infoBox_.recordIceCandidateTypes.bind(this.infoBox_));
-
     this.call_.on('statusmessage', this.displayStatus_.bind(this));
-    this.call_.on('error', this.displayError_.bind(this));
     this.call_.on("callerstarted", this.displaySharingInfo_.bind(this));
 };
 
@@ -454,9 +442,6 @@ AppController.prototype.onKeyPress_ = function (event) {
         case 'f':
             this.toggleFullScreen_();
             return false;
-        case 'i':
-            this.infoBox_.toggleInfoDiv();
-            return false;
         case 'q':
             this.hangup_();
             return false;
@@ -485,11 +470,6 @@ AppController.prototype.displayStatus_ = function (status) {
         this.activate_(this.statusDiv_);
     }
     this.statusDiv_.innerHTML = status;
-};
-
-AppController.prototype.displayError_ = function (error) {
-    trace(error);
-    this.infoBox_.pushErrorMessage(error);
 };
 
 AppController.prototype.toggleAudioMute_ = function () {
