@@ -361,6 +361,9 @@ PeerConnectionClient.prototype.onError_ = function (tag, error) {
     this.emit('error', (tag + ': ' + error.toString()));
 };
 
+PeerConnectionClient.prototype.getLocalStreams = function () {
+    return this.pc_.getLocalStreams();
+};
 PeerConnectionClient.prototype.getRemoteStreams = function () {
     return this.pc_.getRemoteStreams();
 };

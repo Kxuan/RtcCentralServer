@@ -22,6 +22,8 @@ var Call = function (loadingParams) {
     this.localStream_ = null;
 
     this.startTime = null;
+    /** @type {?SignalingChannel} */
+    this.channel_ = null;
 
     // Public callbacks. Keep it sorted.
     this.oncallerstarted = null;
@@ -44,7 +46,9 @@ Call.prototype.requestMediaAndTurnServers_ = function () {
     this.getMediaPromise_ = this.maybeGetMedia_();
     this.getTurnServersPromise_ = this.maybeGetTurnServers_();
 };
-
+Call.prototype.isStarted = function () {
+    return this.channel_ && this.channel_.isRegistered();
+};
 Call.prototype.start = function (roomId) {
     this.joinRoom_(roomId).then(function (params) {
         this.params_ = params;
@@ -208,13 +212,13 @@ Call.prototype.connectToRoom_ = function (roomId) {
         // ready.
         Promise.all([this.getTurnServersPromise_, this.getMediaPromise_])
             .catch(function (error) {
-                this.onError_('Failed to start signaling: ' + error.message);
+                console.error('Failed to start signaling: ', error);
             }.bind(this))
             .then(function () {
-                this.startSignaling_();
-            }.bind(this));
 
-        this.emit('connected', this.params_.roomId, this.params_.roomLink, this.params_.clientId);
+                this.emit('connected', this.params_.roomId, this.params_.roomLink, this.params_.clientId);
+                this.startTime = window.performance.now();
+            }.bind(this));
     }.bind(this)).catch(function (error) {
         this.onError_('WebSocket register error: ' + error.message);
     }.bind(this));
@@ -281,7 +285,6 @@ Call.prototype.onUserMediaSuccess_ = function (stream) {
 
 Call.prototype.onUserMediaError_ = function (error) {
     showAlert('请使用android手机助手！');
-    var errorMessage = 'Please use android helper! ';
 };
 
 Call.prototype.getPeerConnection = function (peerId) {
@@ -295,13 +298,15 @@ Call.prototype.getPeerConnection = function (peerId) {
         var pc = this.peerConnections[peerId] =
             new PeerConnectionClient(peerId, this);
 
-        pc.on('remotehangup', this.emit.bind(this, 'remotehangup', pc));
         pc.on("remoteSdp", function () {
             if (!pc.isHelper) {
                 this.emit('remoteSdp', pc);
+            } else {
+                this.emit('localSdp', pc);
             }
         }.bind(this));
         pc.on('remotestreamadded', this.onRemoteStreamAdded.bind(this, pc));
+
         pc.on('signalingstatechange', this.emit.bind(this, 'signalingstatechange'));
         pc.on('iceconnectionstatechange', this.emit.bind(this, 'iceconnectionstatechange'));
         pc.on('error', this.emit.bind(this, 'error'));
@@ -317,13 +322,6 @@ Call.prototype.getPeerConnection = function (peerId) {
     }
 };
 
-Call.prototype.startSignaling_ = function () {
-    trace('Starting signaling.');
-
-    this.emit("callerstarted", this.params_.roomId, this.params_.roomLink);
-
-    this.startTime = window.performance.now();
-};
 
 // Join the room and returns room parameters.
 Call.prototype.joinRoom_ = function (roomId) {
@@ -343,7 +341,6 @@ Call.prototype.joinRoom_ = function (roomId) {
             resolve(responseObj);
         }.bind(this)).catch(function (error) {
             reject(Error('Failed to join the room: ' + error.message));
-            return;
         }.bind(this));
     }.bind(this));
 
@@ -404,12 +401,16 @@ Call.prototype.send = function (message) {
 Call.prototype.onRemoteStreamAdded = function (pc, stream) {
     if (pc.isHelper) {
         this.localStream_ = stream;
-        this.emit('localstreamadded', stream);
-        for (var chromepc in this.peerConnections) {
-            if (this.peerConnections[chromepc].isHelper === false) {
-                this.peerConnections[chromepc].addStream(stream);
+        for (var peerId in this.peerConnections) {
+            var ipc = this.peerConnections[peerId];
+            if (ipc.isHelper === false) {
+                if (ipc.getLocalStreams().length != 0) {
+                    throw new Error(peerId + " already has a local media stream")
+                }
+                ipc.addStream(stream);
             }
         }
+        this.emit('localstreamadded', stream);
     } else {
         this.emit('remotestreamadded', pc, stream);
     }
@@ -419,9 +420,10 @@ Call.prototype.onError_ = function (message) {
     throw message;
 };
 Call.prototype.hasHelper = function () {
-    var pc;
-    for (pc in this.peerConnections) {
-        if (this.peerConnections[pc].isHelper === true) {
+    var peerId, pc;
+    for (peerId in this.peerConnections) {
+        pc = this.peerConnections[peerId];
+        if (pc.isHelper === true) {
             return true;
         }
     }

@@ -26,7 +26,9 @@ var SignalingChannel = function (wssUrl) {
     this.onmessage = null;
 };
 EventEmitter.bindPrototype(SignalingChannel);
-
+SignalingChannel.prototype.isRegistered=function(){
+    return this.registered_;
+};
 SignalingChannel.prototype.open = function () {
     if (this.websocket_) {
         trace('ERROR: SignalingChannel has already opened.');

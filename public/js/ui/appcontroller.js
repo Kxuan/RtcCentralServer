@@ -121,11 +121,9 @@ var AppController = function (loadingParams) {
         this.createCall_();
         this.call_.maybeGetMedia_();
         // Ask the user to confirm.
-        if (!RoomSelection.matchRandomRoomPattern(this.loadingParams_.roomId)) {
-            // Show the room name only if it does not match the random room pattern.
-            $(UI_CONSTANTS.confirmJoinRoomSpan).textContent = ' "' +
-                this.loadingParams_.roomId + '"';
-        }
+        // Show the room name only if it does not match the random room pattern.
+        $(UI_CONSTANTS.confirmJoinRoomSpan).textContent = ' "' +
+            this.loadingParams_.roomId + '"';
         var confirmJoinDiv = $(UI_CONSTANTS.confirmJoinDiv);
         this.show_(confirmJoinDiv);
 
@@ -136,9 +134,6 @@ var AppController = function (loadingParams) {
             var recentlyUsedList = new RoomSelection.RecentlyUsedList();
             recentlyUsedList.pushRecentRoom(this.loadingParams_.roomId);
             this.finishCallSetup_(this.loadingParams_.roomId);
-
-
-            this.qrcodeRoomDiv_.classList.remove('hidden');
 
         }.bind(this);
 
@@ -160,9 +155,9 @@ AppController.prototype.createCall_ = function () {
     this.call_.on('remoteSdp', this.onRemoteSdp.bind(this));
 
     this.call_.on('statusmessage', this.displayStatus_.bind(this));
-    this.call_.on("callerstarted", this.displaySharingInfo_.bind(this));
 
-    this.call_.on("connected", this.displayLocalId_.bind(this));
+    this.call_.on("connected", this.renderLocalId_.bind(this));
+    this.call_.on("connected", this.updateLayout.bind(this));
 };
 
 AppController.prototype.showRoomSelection_ = function () {
@@ -174,7 +169,6 @@ AppController.prototype.showRoomSelection_ = function () {
         this.hide_(roomSelectionDiv);
         this.createCall_();
         this.finishCallSetup_(roomName);
-        this.qrcodeRoomDiv_.classList.remove('hidden');
 
         this.roomSelection_ = null;
         if (this.localStream_) {
@@ -265,6 +259,7 @@ AppController.prototype.updateLayout = function () {
     } else {
         this.videosDiv_.classList.add('hidden');
     }
+
 
     //如果有可显示的远程视频则显示分享
     if (countPlayableVideo >= 1) {
@@ -452,7 +447,7 @@ AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {
     this.activate_(this.sharingDiv_);
 };
 
-AppController.prototype.displayLocalId_ = function (roomId, roomLink, clientId) {
+AppController.prototype.renderLocalId_ = function (roomId, roomLink, clientId) {
     this.localIdDiv_.innerText = '您的本地id是:' + clientId;
 };
 
