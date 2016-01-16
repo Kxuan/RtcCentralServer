@@ -58,7 +58,7 @@ var AppController = function (loadingParams) {
     trace('Initializing; room=' + loadingParams.roomId + '.');
 
     this.fullpageWrapper = $(UI_CONSTANTS.fullpageWrapper);
-    this.hangupSvg_ = $(UI_CONSTANTS.hangupSvg);
+    //this.hangupSvg_ = $(UI_CONSTANTS.hangupSvg);
     this.icons_ = $(UI_CONSTANTS.icons);
     this.localVideo_ = $(UI_CONSTANTS.localVideo);
     this.localVideoWrapper = $(UI_CONSTANTS.localVideoWrapper);
@@ -69,7 +69,7 @@ var AppController = function (loadingParams) {
     this.rejoinDiv_ = $(UI_CONSTANTS.rejoinDiv);
     this.rejoinButton_ = $(UI_CONSTANTS.rejoinButton);
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
-    this.qrcodeHelper_ = $(UI_CONSTANTS.qrcodeHelper);
+    //this.qrcodeHelper_ = $(UI_CONSTANTS.qrcodeHelper);
     this.qrcodeHelperDiv_ = $(UI_CONSTANTS.qrcodeHelperDiv);
     this.qrcodeHelperCanvas = $(UI_CONSTANTS.qrcodeHelperCanvas);
     this.qrcodeRoomDiv_ = $(UI_CONSTANTS.qrcodeRoomDiv);
@@ -303,6 +303,7 @@ AppController.prototype.onCallConnected = function (roomId, roomLink, clientId) 
 
     this.ctlHangup.enable();
     this.ctlQRRoom.enable();
+    this.ctlFullscreen.enable();
     if (this.localStream_) {
         this.ctlAudio.enable();
         this.ctlVideo.enable();
@@ -311,7 +312,7 @@ AppController.prototype.onCallConnected = function (roomId, roomLink, clientId) 
     }
 
     renderHelperQrcode(this.qrcodeHelperCanvas, roomId, clientId);
-    renderRoomQrcode(this.qrcodeRoomCanvas);
+    renderRoomQrcode(this.qrcodeRoomCanvas,roomId,clientId);
 };
 AppController.prototype.onRemoteSdp = function (pc) {
     var ui = pc.ui;
@@ -366,7 +367,6 @@ AppController.prototype.onLocalStreamAdded_ = function (stream) {
     this.ctlQRHelper.disable();
     this.ctlAudio.enable();
     this.ctlVideo.enable();
-
     this.updateLayout();
 };
 AppController.prototype.onLocalStreamRemoved = function () {
