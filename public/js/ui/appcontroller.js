@@ -131,7 +131,7 @@ window.AppController = (function () {
             // Display the room selection UI.
             this.showRoomSelection_();
         }
-    };
+    }
 
     AppController.prototype.createCall_ = function () {
         this.call_ = new Call(this.loadingParams_);
@@ -143,8 +143,6 @@ window.AppController = (function () {
 
         this.call_.on('statusmessage', this.displayStatus_.bind(this));
 
-        this.call_.on("connected", this.renderLocalId_.bind(this));
-        this.call_.on("connected", this.updateLayout.bind(this));
     };
 
     AppController.prototype.showRoomSelection_ = function () {
@@ -276,8 +274,11 @@ window.AppController = (function () {
             this.ctlQRHelper.show();
         }
 
+        this.renderLocalId_(roomId, roomLink, clientId);
+        this.renderSharingInfo(roomId, roomLink);
         renderHelperQrcode(this.qrcodeHelperCanvas, roomId, clientId);
         renderRoomQrcode(this.qrcodeRoomCanvas, roomId, clientId);
+        this.updateLayout();
     };
     AppController.prototype.onRemoteSdp = function (pc) {
         var ui = pc.ui;
@@ -426,10 +427,9 @@ window.AppController = (function () {
             roomLink);
     };
 
-    AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {
+    AppController.prototype.renderSharingInfo = function (roomId, roomLink) {
         this.roomLinkHref_.href = roomLink;
         this.roomLinkHref_.text = roomLink;
-        this.activate_(this.sharingDiv_);
     };
 
     AppController.prototype.renderLocalId_ = function (roomId, roomLink, clientId) {
