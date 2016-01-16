@@ -54,11 +54,9 @@ var UI_CONSTANTS = {
 var AppController = function (loadingParams) {
     this.loadingParams_ = loadingParams;
     this.loadUrlParams_();
-    trace('Initializing; server= ' + loadingParams.roomServer + '.');
     trace('Initializing; room=' + loadingParams.roomId + '.');
 
     this.fullpageWrapper = $(UI_CONSTANTS.fullpageWrapper);
-    this.hangupSvg_ = $(UI_CONSTANTS.hangupSvg);
     this.icons_ = $(UI_CONSTANTS.icons);
     this.localVideo_ = $(UI_CONSTANTS.localVideo);
     this.localVideoWrapper = $(UI_CONSTANTS.localVideoWrapper);
@@ -69,7 +67,6 @@ var AppController = function (loadingParams) {
     this.rejoinDiv_ = $(UI_CONSTANTS.rejoinDiv);
     this.rejoinButton_ = $(UI_CONSTANTS.rejoinButton);
     this.newRoomButton_ = $(UI_CONSTANTS.newRoomButton);
-    this.qrcodeHelper_ = $(UI_CONSTANTS.qrcodeHelper);
     this.qrcodeHelperDiv_ = $(UI_CONSTANTS.qrcodeHelperDiv);
     this.qrcodeHelperCanvas = $(UI_CONSTANTS.qrcodeHelperCanvas);
     this.qrcodeRoomDiv_ = $(UI_CONSTANTS.qrcodeRoomDiv);
@@ -91,8 +88,6 @@ var AppController = function (loadingParams) {
     this.ctlVideo = this.iconController.add('video', $(UI_CONSTANTS.muteVideoSvg));
     this.ctlFullscreen = this.iconController.add('fullscreen', $(UI_CONSTANTS.fullscreenSvg));
     this.ctlHangup = this.iconController.add('hangup', $(UI_CONSTANTS.hangupSvg));
-    this.ctlHangup.on('enable', console.trace.bind(console, 'Control Icon Hangup is enabled'));
-    this.ctlHangup.on('disable', console.trace.bind(console, 'Control Icon Hangup is disabled'));
 
     this.ctlQRHelper.on('click', this.ctlQRHelper.toggle);
     this.ctlQRRoom.on('click', this.ctlQRRoom.toggle);
@@ -101,8 +96,8 @@ var AppController = function (loadingParams) {
     this.ctlFullscreen.on('click', this.ctlFullscreen.toggle);
     this.ctlHangup.on('click', this.hangup_.bind(this));
 
-    this.ctlQRHelper.on('enable', this.ctlQRHelperEnable.bind(this));
-    this.ctlQRHelper.on('disable', this.ctlQRHelperDisable.bind(this));
+    this.ctlQRHelper.on('show', this.ctlQRHelperEnable.bind(this));
+    this.ctlQRHelper.on('hide', this.ctlQRHelperDisable.bind(this));
     this.ctlQRHelper.on('active', this.ctlQRHelperActive.bind(this));
     this.ctlQRHelper.on('deactive', this.ctlQRHelperDeactive.bind(this));
 
@@ -114,7 +109,6 @@ var AppController = function (loadingParams) {
     this.ctlFullscreen.on('toggle', this.toggleFullScreen_.bind(this));
 
 
-    this.roomLink_ = '';
     this.roomSelection_ = null;
     this.localStream_ = null;
 
@@ -161,7 +155,6 @@ AppController.prototype.createCall_ = function () {
     this.call_ = new Call(this.loadingParams_);
     this.call_.on('connected', this.onCallConnected.bind(this));
     this.call_.on('remotehangup', this.onRemoteHangup_.bind(this));
-    this.call_.on('remotestreamadded', this.onRemoteStreamAdded_.bind(this));
     this.call_.on('localstreamadded', this.onLocalStreamAdded_.bind(this));
     this.call_.on('localstreamremoved', this.onLocalStreamRemoved.bind(this));
     this.call_.on('remoteSdp', this.onRemoteSdp.bind(this));
@@ -169,7 +162,7 @@ AppController.prototype.createCall_ = function () {
     this.call_.on('statusmessage', this.displayStatus_.bind(this));
     this.call_.on("callerstarted", this.displaySharingInfo_.bind(this));
 
-    this.call_.on("connected",this.displayLocalId_.bind(this));
+    this.call_.on("connected", this.displayLocalId_.bind(this));
 };
 
 AppController.prototype.showRoomSelection_ = function () {
@@ -283,17 +276,9 @@ AppController.prototype.updateLayout = function () {
     }
 };
 
-AppController.prototype.attachLocalStream_ = function () {
-    // Call the polyfill wrapper to attach the media stream to this element.
-    attachMediaStream(this.localVideo_, this.localStream_);
-
-    this.displayStatus_('');
-    this.updateLayout();
-};
-
 AppController.prototype.transitionToDone_ = function () {
     this.deactivate_(this.localVideo_);
-    this.iconController.disableAll();
+    this.iconController.hideAll();
     this.activate_(this.rejoinDiv_);
     this.show_(this.rejoinDiv_);
     this.displayStatus_('');
@@ -301,13 +286,13 @@ AppController.prototype.transitionToDone_ = function () {
 AppController.prototype.onCallConnected = function (roomId, roomLink, clientId) {
     this.pushCallNavigation_(roomId, roomLink);
 
-    this.ctlHangup.enable();
-    this.ctlQRRoom.enable();
+    this.ctlHangup.show();
+    this.ctlQRRoom.show();
     if (this.localStream_) {
-        this.ctlAudio.enable();
-        this.ctlVideo.enable();
+        this.ctlAudio.show();
+        this.ctlVideo.show();
     } else {
-        this.ctlQRHelper.enable();
+        this.ctlQRHelper.show();
     }
 
     renderHelperQrcode(this.qrcodeHelperCanvas, roomId, clientId);
@@ -351,21 +336,15 @@ AppController.prototype.onRemoteHangup_ = function (pc) {
     delete pc.ui;
     this.updateLayout();
 };
-AppController.prototype.onRemoteStreamAdded_ = function (pc, stream) {
-    trace('Remote stream added.');
-};
-AppController.prototype.onRemoteStreamRemoved = function (pc, stream) {
-    trace('Remote stream added.');
-};
 
 AppController.prototype.onLocalStreamAdded_ = function (stream) {
     trace('User has granted access to local media.');
     this.localStream_ = stream;
     attachMediaStream(this.localVideo_, this.localStream_);
 
-    this.ctlQRHelper.disable();
-    this.ctlAudio.enable();
-    this.ctlVideo.enable();
+    this.ctlQRHelper.hide();
+    this.ctlAudio.show();
+    this.ctlVideo.show();
 
     this.updateLayout();
 };
@@ -380,9 +359,9 @@ AppController.prototype.onLocalStreamRemoved = function () {
     }
 
     this.displayStatus_('');
-    this.ctlQRHelper.enable();
-    this.ctlAudio.disable();
-    this.ctlVideo.disable();
+    this.ctlQRHelper.show();
+    this.ctlAudio.hide();
+    this.ctlVideo.hide();
     this.updateLayout();
 };
 
@@ -394,6 +373,9 @@ AppController.prototype.ctlQRHelperDisable = function () {
 };
 AppController.prototype.ctlQRHelperActive = function () {
     this.qrcodeHelperDiv_.classList.remove('hidden');
+
+    //Force Update Document
+    //noinspection BadExpressionStatementJS
     +this.qrcodeHelperDiv_.clientWidth;
     this.qrcodeHelperDiv_.classList.remove('fadeOut');
 };
@@ -403,6 +385,9 @@ AppController.prototype.ctlQRHelperDeactive = function () {
 };
 AppController.prototype.ctlQRRoomActive = function () {
     this.qrcodeRoomDiv_.classList.remove('hidden');
+
+    //Force Update Document
+    //noinspection BadExpressionStatementJS
     +this.qrcodeRoomDiv_.clientWidth;
     this.qrcodeRoomDiv_.classList.remove('fadeOut');
 };
@@ -431,7 +416,7 @@ AppController.prototype.onNewRoomClick_ = function () {
 // q: quit (hangup)
 // Return false to screen out original Chrome shortcuts.
 AppController.prototype.onKeyPress_ = function (event) {
-    switch (String.fromCharCode(event.charCode)) {
+    switch (String.fromCharCode(+event.charCode)) {
         case ' ':
         case 'm':
             if (this.call_) {
@@ -463,14 +448,12 @@ AppController.prototype.pushCallNavigation_ = function (roomId, roomLink) {
 AppController.prototype.displaySharingInfo_ = function (roomId, roomLink) {
     this.roomLinkHref_.href = roomLink;
     this.roomLinkHref_.text = roomLink;
-    this.roomLink_ = roomLink;
     this.activate_(this.sharingDiv_);
 };
 
-AppController.prototype.displayLocalId_ = function (roomId,roomLink,clientId) {
-    var localIdTips = '您的本地id是:' + clientId;
-    this.localIdDiv_.innerText = localIdTips;
-}
+AppController.prototype.displayLocalId_ = function (roomId, roomLink, clientId) {
+    this.localIdDiv_.innerText = '您的本地id是:' + clientId;
+};
 
 AppController.prototype.displayStatus_ = function (status) {
     if (!status) {
@@ -510,7 +493,7 @@ AppController.prototype.loadUrlParams_ = function () {
     // Suppressing jshint warns about using urlParams['KEY'] instead of
     // urlParams.KEY, since we'd like to use string literals to avoid the Closure
     // compiler renaming the properties.
-    var urlParams = queryStringToDictionary(window.location.search)
+    var urlParams = queryStringToDictionary(window.location.search);
 
     this.loadingParams_.audioSendBitrate = urlParams['asbr'];
     this.loadingParams_.audioSendCodec = urlParams['asc'];

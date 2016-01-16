@@ -4,42 +4,42 @@ window.IconController = (function () {
      *
      * @param {string} name
      * @param {HTMLElement} el
-     * @param {boolean} isEnabled
+     * @param {boolean} visible
      * @constructor
      * @extends EventEmitter
      */
-    function Icon(name, el, isEnabled) {
+    function Icon(name, el, visible) {
         this.name = name;
         this.el = el;
 
-        if (isEnabled) {
-            this.enable();
+        if (visible) {
+            this.show();
         } else {
-            this.disable();
+            this.hide();
         }
         this.deactive();
         el.addEventListener('click', this.emit.bind(this, 'click'));
     }
 
     EventEmitter.bindPrototype(Icon);
-    Icon.prototype.enable = function () {
-        if (this._enabled === undefined || !this._enabled) {
-            this._enabled = true;
+    Icon.prototype.show = function () {
+        if (this._visible === undefined || !this._visible) {
+            this._visible = true;
             this.el.classList.remove('hidden');
-            this.emit('enable');
+            this.emit('show');
         }
         return this;
     };
-    Icon.prototype.disable = function () {
-        if (this._enabled === undefined || this._enabled) {
-            this._enabled = false;
+    Icon.prototype.hide = function () {
+        if (this._visible === undefined || this._visible) {
+            this._visible = false;
             this.el.classList.add('hidden');
-            this.emit('disable');
+            this.emit('hide');
         }
         return this;
     };
-    Icon.prototype.isEnabled = function () {
-        return this._enabled;
+    Icon.prototype.isVisible = function () {
+        return this._visible;
     };
 
     Icon.prototype.active = function () {
@@ -83,11 +83,11 @@ window.IconController = (function () {
      *
      * @param {string} name Icon name
      * @param {HTMLElement} el Icon Element
-     * @param {boolean} [isEnabled] initial enable state
+     * @param {boolean} [isVisible] initial show state
      * @returns {Icon}
      */
-    IconController.prototype.add = function (name, el, isEnabled) {
-        return this.icons[name] = new Icon(name, el, isEnabled)
+    IconController.prototype.add = function (name, el, isVisible) {
+        return this.icons[name] = new Icon(name, el, isVisible)
     };
     IconController.prototype.remove = function (name) {
         delete this.icons[name];
@@ -99,9 +99,9 @@ window.IconController = (function () {
     IconController.prototype.get = function (name) {
         return this.icons[name];
     };
-    IconController.prototype.disableAll = function () {
+    IconController.prototype.hideAll = function () {
         for (var key in this.icons) {
-            this.icons[key].disable();
+            this.icons[key].hide();
         }
     };
     return IconController;
