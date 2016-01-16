@@ -330,8 +330,8 @@ router.get('/turn', function (req, res, next) {
         password: password,
         ttl:      time_to_live,
         "uris":   constants.TURN_SERVER.reduce(function (arr, v) {
-            arr.push("turn:" + v + "?transport=udp");
-            arr.push("turn:" + v + "?transport=tcp");
+            arr.push("stun:" + v + "?transport=udp");
+            arr.push("stun:" + v + "?transport=tcp");
             return arr;
         }, [])
     });
