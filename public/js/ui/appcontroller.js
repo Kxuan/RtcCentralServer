@@ -303,7 +303,7 @@ window.AppController = (function () {
         }
     };
     AppController.prototype.onRemoteHangup_ = function (pc) {
-        showAlert('远程已挂断！');
+        //showAlert('远程已挂断！');
         var ui = pc.ui;
         if (!ui) {
             return;
