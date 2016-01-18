@@ -1,3 +1,4 @@
+require('debug').enable('*');
 //Load configuration
 var fs = require('fs');
 var path = require('path');
@@ -52,7 +53,6 @@ function findConfigFile() {
 }
 function startInstaller() {
     debug("Cannot find any config file. Start installer");
-    require('debug').enable('*');
     require('./install/installer.js');
 }
 function startApplication(config) {
@@ -67,7 +67,7 @@ function startApplication(config) {
             if (debugCfg.redirect) {
                 var stream = global.logStream = fs.createWriteStream(debugCfg.output, {
                     flags: 'a',
-                    mode:  0600
+                    mode:  0o600
                 });
 
                 var oldLog = libDebug.log;
