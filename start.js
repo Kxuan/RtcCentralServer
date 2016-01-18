@@ -1,6 +1,7 @@
 //Load configuration
 var fs = require('fs');
 var path = require('path');
+var util = require('util');
 var debug = require('debug')('launcher');
 
 function tryConfigFile(filename) {
@@ -64,9 +65,16 @@ function startApplication(config) {
             libDebug.enable(debugCfg);
         } else {
             if (debugCfg.redirect) {
-                delete require.cache[require.resolve('debug')];
-                process.env.DEBUG_FD = debugCfg.output;
-                libDebug = require('debug');
+                var stream = global.logStream = fs.createWriteStream(debugCfg.output, {
+                    flags: 'a',
+                    mode:  0600
+                });
+
+                var oldLog = libDebug.log;
+                libDebug.log = function () {
+                    stream.write(util.format.apply(this, arguments) + '\n');
+                    return oldLog.apply(this, arguments);
+                }
             }
             if (debugCfg.filters) {
                 libDebug.enable(debugCfg.filters);
