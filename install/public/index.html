@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!--suppress XmlUnboundNsPrefix -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>配置中心服务器</title>
+  <script type="text/javascript" src="vue.min.js"></script>
+  <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+</head>
+<body>
+<div id="myModal" class="modal fade" style="background: rgba(0,0,0,0.6)" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="myModalLabel">正在保存配置</h4></div>
+      <div class="modal-body">请稍后...</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeSaveModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="jumbotron">
+  <h1>配置服务器</h1>
+
+  <p>本页面将协助您快速生成<span class="label label-primary">中心服务器</span>的配置文件，请依次完成如下配置</p>
+</div>
+<div role="complementary" class="affix">
+  <ul class="nav nav-stacked">
+    <li role="presentation" class="active"><a href="#server">服务器</a></li>
+    <li role="presentation"><a href="#turn">TURN/STUN</a></li>
+    <li role="presentation"><a href="#wss">消息服务器</a></li>
+    <li role="presentation"><a href="#debug">调试输出</a></li>
+  </ul>
+  <div class="text-center">
+    <button class="btn btn-danger" style="margin-top: 20px" onclick="saveConfig()">保存配置</button>
+  </div>
+</div>
+<div role="main" style="margin-left: 120px">
+  <div id="server" class="panel panel-default">
+    <div class="panel-heading">服务器</div>
+    <div class="panel-body">
+      <div class="form-horizontal">
+        <div class="form-group">
+          <label class="col-sm-2 control-label">监听</label>
+
+          <div class="col-sm-8">
+            <input class="form-control" type="text" v-model="listen">
+
+            <div class="help-block">如果您需要通过Nginx等其他应用程序部署负载均衡、虚拟主机等优化措施，
+              推荐使用<span class="label label-warning">Unix套接字</span>，
+              否则推荐使用<span class="label label-info">TCP端口号</span>
+            </div>
+          </div>
+          <div class="col-sm-2">
+            <span class="label label-info" v-if="!isNaN(+listen)">TCP端口号</span>
+            <span class="label label-warning" v-else>UNIX套接字</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-2 control-label">服务器访问地址</label>
+
+          <div class="col-sm-10">
+            <input class="form-control" type="text" v-model="origin">
+
+            <div class="help-block">请填写外网访问本服务器使用的地址，格式为
+              <span class="label label-info">域名:端口号</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-2 control-label">HTTPS 私钥文件路径</label>
+
+          <div class="col-sm-10">
+            <input class="form-control" type="text" v-model="key">
+
+            <div class="help-block">私钥文件应为<span class="label label-success">PEM格式</span><span
+                    class="label label-danger">未加密的</span><span class="label label-info">RSA私钥</span>文件
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-2 control-label">HTTPS 服务器证书文件路径</label>
+
+          <div class="col-sm-10">
+            <input class="form-control" type="text" v-model="cert">
+
+            <div class="help-block">证书文件应为<span class="label label-success">x509v3格式</span>文件
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="col-sm-2 control-label">HTTPS CA证书文件路径</label>
+
+          <div class="col-sm-10">
+            <input class="form-control" type="text" v-model="ca[0]">
+
+            <div class="help-block">证书文件应为<span class="label label-success">x509v3格式</span>文件
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="turn" class="panel panel-default">
+    <div class="panel-heading">TURN/STUN配置</div>
+    <div class="panel-body">
+      <div class="form-horizontal">
+        <div class="form-group">
+          <label class="col-sm-2 control-label">STUN服务器静态密码</label>
+
+          <div class="col-sm-10">
+            <input class="form-control" type="text" v-model="static_key">
+
+            <div class="help-block">当前只支持以静态密码方式访问TURN/STUN服务器</div>
+          </div>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-heading">STUN服务器地址</div>
+          <div class="panel-body">
+            <div class="btn-group" role="group" aria-label="toolbar">
+              <button class="btn btn-primary" v-on:click="servers.push('')">添加服务器</button>
+              <button class="btn btn-default" v-on:click="servers=[]">清空服务器</button>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+            <tr>
+              <td>服务器地址</td>
+              <td>操作</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="svr in servers">
+              <td>
+                <div class="has-feedback"
+                     v-bind:class="{'has-success': svr, 'has-error' : !svr}">
+                  <input class="form-control" type="text" v-model="svr" placeholder="STUN服务器地址，格式 主机名:端口号"/>
+                        <span class="glyphicon form-control-feedback"
+                              v-bind:class="{'glyphicon-ok': svr, 'glyphicon-remove' :!svr}"
+                              aria-hidden="true"></span>
+                </div>
+              </td>
+              <td>
+                <span class="clickable label label-default" v-on:click="filters.$remove(cfg)">删除</span>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="wss" class="panel panel-default">
+    <div class="panel-heading">消息服务器</div>
+    <div class="panel-body">
+
+      <div class="form-horizontal">
+        <div class="form-group">
+          <label class="col-sm-2 control-label">消息服务器地址</label>
+
+          <div class="col-sm-10">
+            <input class="form-control" type="text" v-model="server">
+
+            <div class="help-block">请填写消息服务器地址</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="debug" class="panel panel-default">
+    <div class="panel-heading">调试输出</div>
+    <div class="panel-body">
+      <!--<div class="form-horizontal">
+        <div class="form-group">
+          <label class="col-sm-2 control-label"><input type="checkbox" v-model="redirect">日志输出重定向</label>
+
+          <div class="col-sm-10">
+            <input class="form-control" type="text" v-model="output" v-bind:disabled="!redirect"
+                   placeholder="请填写日志文件路径"/>
+
+            <div class="help-block">
+              如需将服务器的日志输出到指定文件，请启用该选项并指定输出路径。否则日志将只输出至控制台
+            </div>
+          </div>
+        </div>
+      </div>-->
+      <div class="panel panel-default">
+        <div class="panel-heading">日志输出规则</div>
+        <div class="panel-body">
+          <div class="btn-group" role="group" aria-label="toolbar">
+            <button class="btn btn-primary" v-on:click="filters.push({enable: true, rule: ''})">添加规则</button>
+            <button class="btn btn-default" v-on:click="filters=[]">清空规则</button>
+          </div>
+        </div>
+        <table class="table">
+          <thead>
+          <tr>
+            <td>当前</td>
+            <td>规则</td>
+            <td>操作</td>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="cfg in filters">
+            <td>
+              <label>
+                      <span class="label label-success" role="button" v-on:click="cfg.enable=!cfg.enable"
+                            v-if="cfg.enable">允许</span>
+                      <span class="label label-danger" role="button" v-on:click="cfg.enable=!cfg.enable"
+                            v-if="!cfg.enable">禁止</span>
+              </label>
+            </td>
+            <td>
+              <div class="has-feedback"
+                   v-bind:class="{'has-success': cfg.rule, 'has-error' :!cfg.rule}">
+                <input class="form-control" type="text" v-model="cfg.rule" placeholder="请输入规则"/>
+                        <span class="glyphicon form-control-feedback"
+                              v-bind:class="{'glyphicon-ok': cfg.rule, 'glyphicon-remove' :!cfg.rule}"
+                              aria-hidden="true"></span>
+              </div>
+            </td>
+            <td>
+              <span class="label label-default" role="button" v-on:click="filters.$remove(cfg)">删除规则</span>
+                    <span class="label label-success" role="button" v-on:click="cfg.enable=true"
+                          v-if="!cfg.enable">转为允许</span>
+                    <span class="label label-danger" role="button" v-on:click="cfg.enable=false"
+                          v-if="cfg.enable">转为禁止</span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript" src="main.js" defer></script>
+</body>
+</html>

@@ -10,14 +10,12 @@ var routes = require('./routes');
 var app = express();
 
 // view engine setup
-app.set('views', path.join(__dirname, 'public/html'));
+app.set('views', path.join(__dirname, 'public','html'));
 app.set('view engine', 'ejs');
 
 app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
-app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
-app.use(bodyParser.text());
 app.use(cookieParser());
 app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
