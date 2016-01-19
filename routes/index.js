@@ -337,6 +337,9 @@ router.get('/turn', function (req, res, next) {
     });
 
 });
+router.all('/android',function(req,res,next){
+    res.redirect('/apprtc.apk');
+});
 router.post('/join/:roomId', function (req, res, next) {
     res.header("Access-Control-Allow-Origin", constants.ROOM_SERVER_HOST);
     var roomId = +req.params.roomId;

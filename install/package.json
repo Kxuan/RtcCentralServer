@@ -1,0 +1,11 @@
+{
+  "name": "apprtc-central-server-installer",
+  "version": "0.0.1",
+  "author": "kXuan <kxuanobj@gmail.com>",
+  "main": "installer.js",
+  "dependencies": {
+    "express": "latest",
+    "debug": "latest",
+    "open": "latest"
+  }
+}
