@@ -269,7 +269,7 @@ window.Call = (function () {
     };
 
     Call.prototype.onUserMediaError_ = function (error) {
-        showAlert('请使用android手机助手！');
+
     };
 
     Call.prototype.getPeerConnection = function (peerId) {
