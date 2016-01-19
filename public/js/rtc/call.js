@@ -371,6 +371,14 @@ window.Call = (function () {
 
                 break;
 
+            //Error消息
+            case 'error':
+                if(msg.message === 'Room Error') {
+                    alert('房间注册失败');
+                    history.go(-1);
+                };
+                break;
+
             default:
                 console.info("Message:", msg);
         }
