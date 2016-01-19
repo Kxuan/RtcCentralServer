@@ -53,7 +53,7 @@ function findConfigFile() {
 }
 function startInstaller() {
     debug("Cannot find any config file. Start installer");
-    require('./install/installer.js');
+    require('./install');
 }
 function startApplication(config) {
     debug("Start application ");
