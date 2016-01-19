@@ -128,10 +128,12 @@ function testConfig(rawData) {
     if (config.debug.redirect) {
         p = p.then(checkFileWritable(config.debug.output));
     }
-    p = p.then(checkFileReadable(config.server.key));
-    p = p.then(checkFileReadable(config.server.cert));
-    config.server.ca.forEach(function (filename) {
-        p = p.then(checkFileReadable(filename));
-    });
+    if (config.server.https) {
+        p = p.then(checkFileReadable(config.server.key));
+        p = p.then(checkFileReadable(config.server.cert));
+        config.server.ca.forEach(function (filename) {
+            p = p.then(checkFileReadable(filename));
+        });
+    }
     return p;
 }
