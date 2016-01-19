@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var util = require('util');
 var express = require('express');
+var open = require('open');
 var debug = require('debug')('installer');
 var app = express();
 app.use('/', express.static(path.join(__dirname, 'public')));
@@ -44,7 +45,6 @@ app.listen(function () {
     } else {
         url = util.format("http://[%s]:%d/", address.address, address.port);
     }
-    var open = require('open');
     open(url, null, function (err) {
         if (err instanceof Error) {
             debug("Installer can not open your default web browser. use your web browser to access these addresses:");
@@ -128,10 +128,12 @@ function testConfig(rawData) {
     if (config.debug.redirect) {
         p = p.then(checkFileWritable(config.debug.output));
     }
-    p = p.then(checkFileReadable(config.server.key));
-    p = p.then(checkFileReadable(config.server.cert));
-    config.server.ca.forEach(function (filename) {
-        p = p.then(checkFileReadable(filename));
-    });
+    if (config.server.https) {
+        p = p.then(checkFileReadable(config.server.key));
+        p = p.then(checkFileReadable(config.server.cert));
+        config.server.ca.forEach(function (filename) {
+            p = p.then(checkFileReadable(filename));
+        });
+    }
     return p;
 }

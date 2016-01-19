@@ -8,8 +8,8 @@ var data = {
         ]
     },
     "server": {
-        "listen":           3000,
-        "origin":           "apprtc.ixuan.org:3000",
+        "listen":           443,
+        "origin":           "apprtc.ixuan.org:443",
         "https":            true,
         "key":              "/data/certs/apprtc.key",
         "cert":             "/data/certs/apprtc.crt",
