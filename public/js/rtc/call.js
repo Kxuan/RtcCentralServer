@@ -11,17 +11,7 @@ window.Call = (function () {
         this.channel_ = null;
 
         // Public callbacks. Keep it sorted.
-        this.oncallerstarted = null;
         this.onerror = null;
-        this.oniceconnectionstatechange = null;
-        this.onlocalstreamadded = null;
-        this.onnewicecandidate = null;
-        this.onremotehangup = null;
-        this.onremoteSdp = null;
-        this.onremotestreamadded = null;
-        this.onsignalingstatechange = null;
-        this.onstatusmessage = null;
-
         this.getMediaPromise_ = null;
         this.getTurnServersPromise_ = null;
     };

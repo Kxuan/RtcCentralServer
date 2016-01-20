@@ -11,7 +11,6 @@ window.SignalingChannel = (function () {
 
         // Public callbacks. Keep it sorted.
         this.onerror = null;
-        this.onmessage = null;
     }
     EventEmitter.bindPrototype(SignalingChannel);
     SignalingChannel.prototype.isRegistered = function () {

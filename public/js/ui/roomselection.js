@@ -35,7 +35,6 @@ window.RoomSelection = (function () {
         this.startBuildingRecentRoomList_();
 
         // Public callbacks. Keep it sorted.
-        this.onRoomSelected = null;
     };
     EventEmitter.bindPrototype(RoomSelection);
 
