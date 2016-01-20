@@ -32,12 +32,6 @@ window.PeerConnectionClient=(function() {
         // TODO(jiayl): Replace callbacks with events.
         // Public callbacks. Keep it sorted.
         this.onerror = null;
-        this.onremoteSdp = null;
-        this.oniceconnectionstatechange = null;
-        this.onnewicecandidate = null;
-        this.onremotehangup = null;
-        this.onremotestreamadded = null;
-        this.onsignalingstatechange = null;
     }
 
     EventEmitter.bindPrototype(PeerConnectionClient);
