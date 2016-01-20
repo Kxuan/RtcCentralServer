@@ -13,9 +13,7 @@ var data = {
         "https":            true,
         "key":              "/data/certs/apprtc.key",
         "cert":             "/data/certs/apprtc.crt",
-        "ca":               [
-            "/data/certs/CA/cacert.pem"
-        ],
+        "ca":               [],
         "handshakeTimeout": 10000
     },
     "turn":   {
