@@ -4,7 +4,10 @@ var data = {
         output:   '',
         filters:  [
             {enable: true, rule: '*'},
-            {enable: false, rule: 'express:*'}
+            {enable: false, rule: 'express:*'},
+            {enable: false, rule: 'body-parser:*'},
+            {enable: false, rule: 'send:*'},
+            {enable: false, rule: 'morgan:*'}
         ]
     },
     "server": {
