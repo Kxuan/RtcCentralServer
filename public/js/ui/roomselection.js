@@ -142,7 +142,7 @@ window.RoomSelection = (function () {
             }
 
             this.getRecentRooms().then(function (recentRooms) {
-                recentRooms = [roomId].concat(recentRooms);
+                recentRooms = [+roomId].concat(recentRooms);
                 // Remove any duplicates from the list, leaving the first occurance.
                 recentRooms = recentRooms.filter(function (value, index, self) {
                     return self.indexOf(value) === index;
